@@ -287,7 +287,6 @@ export default function CalendarApp() {
   const stats = getStats();
   const getColor = (idx) => colors[idx].hex;
   const getLabel = (idx) => colors[idx].label;
-  const maxCount = Math.max(...stats.colorCounts, 1);
 
   return (
     <div 
@@ -347,212 +346,196 @@ export default function CalendarApp() {
         {/* 主要內容區 */}
         <div className="flex-grow flex flex-col w-full">
           
-          {/* 星期列 - 只在月曆顯示，但為了高度對齊，統計模式顯示隱形佔位符 */}
-          <div className="flex w-full mb-1">
-            <div className="flex-1 flex pr-0">
-              {viewMode === 'calendar' ? (
-                WEEKDAY_LANGS[weekdayLang].map((day, i) => (
-                  <div 
-                    key={i} 
-                    onClick={cycleLanguage}
-                    className="flex-1 text-center text-[10px] py-1 cursor-pointer select-none font-medium text-slate-400"
-                  >
-                    {day}
-                  </div>
-                ))
-              ) : (
-                // 統計模式的星期列佔位符
-                <div className="w-full h-6"></div>
-              )}
-            </div>
-            {/* 右側對應 W1~W6 的空白 */}
-            <div className="w-[12%] pl-2"></div>
-          </div>
+          {viewMode === 'calendar' ? (
+            /* ================= 月曆模式 ================= */
+            <div className="w-full flex flex-col animate-fade-in">
+              
+              {/* 星期列 */}
+              <div className="flex w-full">
+                <div className="flex-1 flex pr-0">
+                  {WEEKDAY_LANGS[weekdayLang].map((day, i) => (
+                    <div 
+                      key={i} 
+                      onClick={cycleLanguage}
+                      className="flex-1 text-center text-[10px] py-1 cursor-pointer select-none font-medium text-slate-400"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                {/* 右側對應 W1~W6 的空白 (12%) */}
+                <div className="w-[12%] pl-2"></div>
+              </div>
 
-          {/* 核心區域：強制左右分欄 (左:主區塊, 右:筆記) */}
-          <div className="flex flex-row w-full items-start">
-            
-            {/* 左側：主內容方塊 (有邊框) */}
-            {/* 無論是月曆還是長條圖，都放在這個盒子裡，確保寬度高度一致 */}
-            <div className="flex flex-col flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden relative min-h-[24rem]">
-               
-               {viewMode === 'calendar' ? (
-                 // === 月曆模式：網格 ===
-                 weeks.map((week, wIndex) => (
-                   <div key={wIndex} className="flex w-full h-14 md:h-16 border-b border-gray-200 last:border-b-0">
-                      {week.map((dayObj, dIndex) => {
-                        const isToday = dayObj.day === today.getDate() && dayObj.month === today.getMonth() && dayObj.year === today.getFullYear();
-                        const dateKey = `${dayObj.year}-${dayObj.month}-${dayObj.day}`;
-                        const cellData = calendarData[dateKey] || {};
-                        
-                        const slots = Array.from({ length: gridMode }).map((_, sIdx) => {
-                          const colorIdx = cellData[sIdx];
-                          const bgColor = colorIdx !== undefined ? getColor(colorIdx) : 'transparent';
+              {/* 內容區：左邊月曆(有框) + 右邊筆記(無框) */}
+              <div className="flex flex-row w-full items-start">
+                
+                {/* 左側：月曆網格 (圓角邊框) */}
+                <div className="flex flex-col flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                   {weeks.map((week, wIndex) => (
+                     <div key={wIndex} className="flex w-full h-14 md:h-16 border-b border-gray-200 last:border-b-0">
+                        {week.map((dayObj, dIndex) => {
+                          const isToday = dayObj.day === today.getDate() && dayObj.month === today.getMonth() && dayObj.year === today.getFullYear();
+                          const dateKey = `${dayObj.year}-${dayObj.month}-${dayObj.day}`;
+                          const cellData = calendarData[dateKey] || {};
+                          
+                          const slots = Array.from({ length: gridMode }).map((_, sIdx) => {
+                            const colorIdx = cellData[sIdx];
+                            const bgColor = colorIdx !== undefined ? getColor(colorIdx) : 'transparent';
+                            return (
+                              <div 
+                                key={sIdx}
+                                onClick={() => handleCellClick(dayObj, sIdx)}
+                                className="w-full h-full cursor-pointer transition-colors duration-200 border-r border-b border-gray-200 border-opacity-30 last:border-r-0"
+                                style={{ 
+                                  backgroundColor: bgColor,
+                                  borderBottomWidth: (sIdx < gridMode - 2) ? '1px' : '0px',
+                                  borderRightWidth: (sIdx % 2 === 0) ? '1px' : '0px'
+                                }}
+                              />
+                            );
+                          });
+
                           return (
                             <div 
-                              key={sIdx}
-                              onClick={() => handleCellClick(dayObj, sIdx)}
-                              className="w-full h-full cursor-pointer transition-colors duration-200 border-r border-b border-gray-200 border-opacity-30 last:border-r-0"
+                              key={dIndex} 
+                              className="relative flex-1 border-r border-gray-200 last:border-r-0 bg-white"
                               style={{ 
-                                backgroundColor: bgColor,
-                                borderBottomWidth: (sIdx < gridMode - 2) ? '1px' : '0px',
-                                borderRightWidth: (sIdx % 2 === 0) ? '1px' : '0px'
+                                opacity: dayObj.isCurrentMonth ? 1 : 0.4,
                               }}
-                            />
+                            >
+                              <div className={`grid w-full h-full ${gridMode === 6 ? 'grid-rows-3' : 'grid-rows-2'} grid-cols-2`}>
+                                {slots}
+                              </div>
+                              <div className="absolute bottom-0.5 right-0.5 pointer-events-none">
+                                <span 
+                                  className={`text-[10px] font-semibold flex items-center justify-center w-4 h-4 rounded-full
+                                    ${isToday ? 'border border-gray-800 text-gray-800' : 'text-slate-500'}`}
+                                >
+                                  {dayObj.day}
+                                </span>
+                              </div>
+                            </div>
                           );
-                        });
+                        })}
+                     </div>
+                   ))}
+                </div>
+
+                {/* 右側：W1~W6 (無邊框) */}
+                <div className="flex flex-col w-[12%] pl-2">
+                   {weeks.map((week, wIndex) => (
+                     <div key={wIndex} className="flex w-full h-14 md:h-16 items-center justify-center">
+                        <input 
+                          type="text" 
+                          placeholder={`W${wIndex + 1}`}
+                          value={weeklyNotes[`${year}-${month}-${wIndex}`] || ''}
+                          onChange={(e) => setWeeklyNotes({...weeklyNotes, [`${year}-${month}-${wIndex}`]: e.target.value})}
+                          className="w-full h-full text-center bg-transparent outline-none text-[10px] placeholder:text-opacity-30 text-slate-500 placeholder:text-slate-300 border-b border-transparent focus:border-gray-200"
+                        />
+                     </div>
+                   ))}
+                </div>
+
+              </div>
+
+              {/* 顏色選擇區 (3欄，置中) */}
+              <div className="mt-4 flex justify-center w-full">
+                 <div className="grid grid-cols-3 gap-x-6 gap-y-3 mb-2 w-fit mx-auto">
+                    {colors.map((color, idx) => (
+                      <div key={color.id} className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => setSelectedColorIdx(idx)}
+                          className={`w-6 h-6 rounded shrink-0 shadow-sm transition-transform active:scale-95 border-2
+                             ${selectedColorIdx === idx ? 'border-gray-800' : 'border-transparent'}`}
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <input 
+                          type="text" 
+                          value={color.label}
+                          onChange={(e) => {
+                            const newColors = [...colors];
+                            newColors[idx].label = e.target.value;
+                            setColors(newColors);
+                          }}
+                          className="w-14 text-xs bg-transparent border-b border-transparent focus:border-gray-400 outline-none text-slate-700 text-center"
+                        />
+                      </div>
+                    ))}
+                 </div>
+              </div>
+            </div>
+          ) : (
+            /* ================= 統計模式 ================= */
+            <div className="flex flex-col w-full gap-4 animate-fade-in">
+              
+              {stats.totalClicks === 0 ? (
+                // --- 空狀態 ---
+                <div className="flex flex-col items-center justify-center py-20 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
+                  <BarChart2 size={48} className="mb-4 text-gray-300" />
+                  <p className="text-sm text-gray-500">尚無紀錄資料</p>
+                  <p className="text-xs mt-1 text-gray-400">請切換回月曆點擊日期進行紀錄</p>
+                </div>
+              ) : (
+                // --- 有資料時 ---
+                <>
+                  {/* 1. 總計卡片 (全寬) */}
+                  <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
+                    <div className="text-sm opacity-70 mb-4 text-slate-600">截至今日各分類總計</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {colors.map((color, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          <span className="text-xs opacity-80 w-12 truncate text-slate-600">{color.label}</span>
+                          <span className="text-lg font-bold text-slate-700">{stats.colorCounts[idx]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. 本月分佈列表 (全寬) */}
+                  <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
+                    <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700">
+                      <span>本月分佈 ({month + 1}月)</span>
+                      <span className="text-xs opacity-50 self-center">與上月比較</span>
+                    </h3>
+                    <div className="space-y-4">
+                      {stats.monthlyCounts.map((count, idx) => {
+                        // 隱藏無數據的項目
+                        if (count === 0 && stats.colorCounts[idx] === 0) return null;
+
+                        const diff = count - stats.lastMonthCounts[idx];
+                        const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '-' : `${diff}`;
+                        const diffColor = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'opacity-30';
+                        const widthPercent = stats.totalClicks > 0 ? (count / stats.totalClicks) * 100 : 0;
 
                         return (
-                          <div 
-                            key={dIndex} 
-                            className="relative flex-1 border-r border-gray-200 last:border-r-0 bg-white"
-                            style={{ 
-                              opacity: dayObj.isCurrentMonth ? 1 : 0.4,
-                            }}
-                          >
-                            <div className={`grid w-full h-full ${gridMode === 6 ? 'grid-rows-3' : 'grid-rows-2'} grid-cols-2`}>
-                              {slots}
-                            </div>
-                            <div className="absolute bottom-0.5 right-0.5 pointer-events-none">
-                              <span 
-                                className={`text-[10px] font-semibold flex items-center justify-center w-4 h-4 rounded-full
-                                  ${isToday ? 'border border-gray-800 text-gray-800' : 'text-slate-500'}`}
-                              >
-                                {dayObj.day}
-                              </span>
-                            </div>
+                          <div key={idx} className="flex items-center gap-3 w-full">
+                              <div 
+                                className="w-3 h-3 rounded-full shrink-0"
+                                style={{ backgroundColor: getColor(idx) }} 
+                              />
+                              <span className="text-sm w-16 truncate text-slate-600">{getLabel(idx)}</span>
+                              <div className="flex-grow h-2 rounded-full bg-gray-100 overflow-hidden">
+                                <div 
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${Math.max(widthPercent, 0)}%`, backgroundColor: getColor(idx) }}
+                                />
+                              </div>
+                              <div className="w-16 text-right text-xs flex flex-col items-end shrink-0">
+                                <span className="font-bold text-slate-700">{count}</span>
+                                <span className={`font-medium ${diffColor}`}>{diffStr}</span>
+                              </div>
                           </div>
                         );
                       })}
-                   </div>
-                 ))
-               ) : (
-                 // === 統計模式：長條圖 ===
-                 <div className="flex-1 w-full h-full flex flex-col pt-10 px-2 pb-2">
-                    {stats.totalClicks === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full opacity-50">
-                        <BarChart2 size={48} className="mb-4 text-gray-300" />
-                        <p className="text-sm text-gray-500">尚無紀錄資料</p>
-                      </div>
-                    ) : (
-                      <div className="flex items-end justify-around gap-2 h-full w-full">
-                         {colors.map((color, idx) => {
-                            const count = stats.colorCounts[idx];
-                            const heightPercent = count > 0 ? (count / maxCount) * 100 : 0;
-                            const displayHeight = Math.max(heightPercent, 2); 
-
-                            return (
-                              <div key={idx} className="flex flex-col items-center justify-end h-full w-1/6 group relative">
-                                 {/* 數值顯示 (放在長條上方) */}
-                                 <span className={`text-xs font-bold text-gray-500 mb-1 transition-opacity duration-200 ${count > 0 ? 'opacity-100' : 'opacity-0'}`}>
-                                   {count}
-                                 </span>
-                                 
-                                 <div 
-                                   className="w-full rounded-t-md transition-all duration-500 ease-out relative hover:opacity-80"
-                                   style={{ 
-                                     height: `${displayHeight}%`, 
-                                     backgroundColor: color.hex,
-                                     opacity: count > 0 ? 1 : 0.1
-                                   }}
-                                 />
-                                 <span className="text-[10px] mt-2 truncate max-w-full opacity-70 border-t border-gray-100 w-full text-center pt-1">
-                                   {color.label}
-                                 </span>
-                              </div>
-                            )
-                          })}
-                      </div>
-                    )}
-                 </div>
-               )}
-            </div>
-
-            {/* 右側：週筆記 (無外框) */}
-            <div className="flex flex-col w-[12%] pl-2">
-               {viewMode === 'calendar' ? (
-                 weeks.map((week, wIndex) => (
-                   <div key={wIndex} className="flex w-full h-14 md:h-16 items-center justify-center">
-                      <input 
-                        type="text" 
-                        placeholder={`W${wIndex + 1}`}
-                        value={weeklyNotes[`${year}-${month}-${wIndex}`] || ''}
-                        onChange={(e) => setWeeklyNotes({...weeklyNotes, [`${year}-${month}-${wIndex}`]: e.target.value})}
-                        className="w-full h-full text-center bg-transparent outline-none text-[10px] placeholder:text-opacity-30 text-slate-500 placeholder:text-slate-300 border-b border-transparent focus:border-gray-200"
-                      />
-                   </div>
-                 ))
-               ) : (
-                 // 統計模式下，放置一個隱形區塊撐住寬度
-                 <div className="w-full h-full"></div>
-               )}
-            </div>
-
-          </div>
-
-          {/* 下方區域 */}
-          {viewMode === 'calendar' ? (
-            /* 月曆模式：顏色選擇區 */
-            <div className="mt-4 animate-fade-in flex-1 flex justify-center w-full">
-               <div className="grid grid-cols-3 gap-x-6 gap-y-3 mb-2 w-fit mx-auto">
-                  {colors.map((color, idx) => (
-                    <div key={color.id} className="flex items-center justify-center gap-2">
-                      <button 
-                        onClick={() => setSelectedColorIdx(idx)}
-                        className={`w-6 h-6 rounded shrink-0 shadow-sm transition-transform active:scale-95 border-2
-                           ${selectedColorIdx === idx ? 'border-gray-800' : 'border-transparent'}`}
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <input 
-                        type="text" 
-                        value={color.label}
-                        onChange={(e) => {
-                          const newColors = [...colors];
-                          newColors[idx].label = e.target.value;
-                          setColors(newColors);
-                        }}
-                        className="w-14 text-xs bg-transparent border-b border-transparent focus:border-gray-400 outline-none text-slate-700 text-center"
-                      />
                     </div>
-                  ))}
-               </div>
-            </div>
-          ) : (
-            /* 統計模式：詳細數據列表 (在框外) */
-            <div className="w-full p-2 bg-transparent mt-4 animate-fade-in">
-              <div className="flex justify-between items-center mb-4 px-2">
-                 <h3 className="text-md font-semibold text-slate-700">本月分佈 ({month + 1}月)</h3>
-                 <span className="text-xs opacity-50">與上月比較</span>
-              </div>
-              <div className="space-y-4">
-                {stats.monthlyCounts.map((count, idx) => {
-                  if (count === 0 && stats.colorCounts[idx] === 0) return null;
-                  const diff = count - stats.lastMonthCounts[idx];
-                  const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '-' : `${diff}`;
-                  const diffColor = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'opacity-30';
-                  const widthPercent = stats.totalClicks > 0 ? (count / stats.totalClicks) * 100 : 0;
-
-                  return (
-                    <div key={idx} className="flex items-center gap-3 w-full px-2">
-                        <div 
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: getColor(idx) }} 
-                        />
-                        <span className="text-sm w-16 truncate text-slate-600">{getLabel(idx)}</span>
-                        <div className="flex-grow h-2 rounded-full bg-gray-100 overflow-hidden">
-                          <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${Math.max(widthPercent, 0)}%`, backgroundColor: getColor(idx) }}
-                          />
-                        </div>
-                        <div className="w-16 text-right text-xs flex flex-col items-end shrink-0">
-                          <span className="font-bold text-slate-700">{count}</span>
-                          <span className={`font-medium ${diffColor}`}>{diffStr}</span>
-                        </div>
-                    </div>
-                  );
-                })}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
