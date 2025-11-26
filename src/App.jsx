@@ -351,8 +351,9 @@ export default function CalendarApp() {
             /* ================= 月曆模式 ================= */
             <div className="w-full flex flex-col">
               
-              {/* 星期列 - 只在月曆左側顯示 */}
+              {/* 星期列 - 這裡要精準對齊：左邊是月曆，右邊是筆記 */}
               <div className="flex w-full">
+                {/* 月曆上方的星期 */}
                 <div className="flex-1 flex pr-0">
                   {WEEKDAY_LANGS[weekdayLang].map((day, i) => (
                     <div 
@@ -364,17 +365,21 @@ export default function CalendarApp() {
                     </div>
                   ))}
                 </div>
-                {/* 對齊右側筆記的空白 */}
-                <div className="w-[10%] pl-2"></div>
+                {/* 右側對應 W1~W6 的空白，保持間距 */}
+                <div className="w-[12%] pl-2"></div>
               </div>
 
               {/* 內容區：左邊月曆(有框) + 右邊筆記(無框) */}
               <div className="flex flex-row w-full items-start">
                 
-                {/* 左側：月曆網格 (有框線) */}
-                <div className="flex flex-col flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                {/* 左側：月曆網格 (獨立的圓角方塊框線) */}
+                {/* 注意：這裡的 border-b 要小心，因為裡面每行也有 border-b */}
+                <div className="flex flex-col flex-1 border-l border-r border-t border-gray-200 rounded-lg bg-white">
                    {weeks.map((week, wIndex) => (
-                     <div key={wIndex} className="flex w-full h-14 md:h-16 border-b border-gray-200 last:border-b-0">
+                     <div key={wIndex} className={`flex w-full h-14 md:h-16 border-b border-gray-200
+                         ${wIndex === 0 ? 'rounded-t-lg' : ''}
+                         ${wIndex === weeks.length - 1 ? 'rounded-b-lg' : ''}`}>
+                        
                         {week.map((dayObj, dIndex) => {
                           const isToday = dayObj.day === today.getDate() && dayObj.month === today.getMonth() && dayObj.year === today.getFullYear();
                           const dateKey = `${dayObj.year}-${dayObj.month}-${dayObj.day}`;
@@ -390,6 +395,7 @@ export default function CalendarApp() {
                                 className="w-full h-full cursor-pointer transition-colors duration-200 border-r border-b border-gray-200 border-opacity-30 last:border-r-0"
                                 style={{ 
                                   backgroundColor: bgColor,
+                                  // 內部格線
                                   borderBottomWidth: (sIdx < gridMode - 2) ? '1px' : '0px',
                                   borderRightWidth: (sIdx % 2 === 0) ? '1px' : '0px'
                                 }}
@@ -423,8 +429,8 @@ export default function CalendarApp() {
                    ))}
                 </div>
 
-                {/* 右側：W1~W6 (無框線，保持間距) */}
-                <div className="flex flex-col w-[10%] pl-2">
+                {/* 右側：W1~W6 (無外框線，完全開放) */}
+                <div className="flex flex-col w-[12%] pl-2">
                    {weeks.map((week, wIndex) => (
                      <div key={wIndex} className="flex w-full h-14 md:h-16 items-center justify-center">
                         <input 
@@ -470,10 +476,8 @@ export default function CalendarApp() {
             /* ================= 統計模式 ================= */
             <div className="flex flex-col w-full gap-4 animate-fade-in">
               
-              {/* 移除標題留白，直接顯示內容 */}
-
               {stats.totalClicks === 0 ? (
-                // --- 空狀態顯示 ---
+                // --- 空狀態顯示 (加上 w-full) ---
                 <div className="flex flex-col items-center justify-center h-96 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
                   <BarChart2 size={48} className="mb-4 text-gray-300" />
                   <p className="text-sm text-gray-500">尚無紀錄資料</p>
@@ -483,8 +487,8 @@ export default function CalendarApp() {
                 // --- 有資料時的顯示 ---
                 <>
                   {/* 長條圖顯示 - 放在框框內 */}
-                  {/* 增加 pt-10 確保上方數字不被切到 */}
-                  <div className="w-full h-96 p-6 pt-10 rounded-xl shadow-sm flex items-end justify-around gap-2 border bg-white border-gray-200 box-border overflow-hidden">
+                  {/* 增加 pt-12 確保上方數字不被切到 */}
+                  <div className="w-full h-80 p-4 pt-12 rounded-xl shadow-sm flex items-end justify-around gap-2 border bg-white border-gray-200 box-border overflow-visible">
                      {colors.map((color, idx) => {
                         const count = stats.colorCounts[idx];
                         const heightPercent = count > 0 ? (count / maxCount) * 100 : 0;
@@ -514,7 +518,7 @@ export default function CalendarApp() {
                   </div>
 
                   {/* 詳細列表 - 放在框框外，無邊框 */}
-                  <div className="w-full p-2 bg-transparent mt-2">
+                  <div className="w-full p-2 bg-transparent mt-0">
                     <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700 px-2">
                       <span>本月分佈 ({month + 1}月)</span>
                       <span className="text-xs opacity-50 self-center">與上月比較</span>
