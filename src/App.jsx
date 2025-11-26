@@ -94,10 +94,11 @@ export default function CalendarApp() {
   const touchStartRef = useRef(null); 
   const touchEndRef = useRef(null);   
   const fileInputRef = useRef(null);
-  
-  // 用於自動滾動的 Ref
   const selectedYearRef = useRef(null);
   const selectedMonthRef = useRef(null);
+
+  // 這裡補上了 today 的定義
+  const today = new Date();
 
   useEffect(() => {
     const savedData = localStorage.getItem('calendarAppData');
@@ -130,10 +131,8 @@ export default function CalendarApp() {
     localStorage.setItem('calendarAppData', JSON.stringify(dataToSave));
   }, [appTitle, gridMode, calendarData, colors, weeklyNotes, bottomNotes, weekdayLang]);
 
-  // 當打開日期選擇器時，自動滾動到當前年月
   useEffect(() => {
     if (showDatePicker) {
-      // 使用 setTimeout 確保 DOM 已經渲染完成後再滾動
       const timer = setTimeout(() => {
         selectedYearRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
         selectedMonthRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
@@ -144,7 +143,6 @@ export default function CalendarApp() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const today = new Date();
   
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -165,10 +163,8 @@ export default function CalendarApp() {
 
   const handleSwipe = () => {
     if (!touchStartRef.current || !touchEndRef.current) return;
-    
     const distanceX = touchStartRef.current.x - touchEndRef.current.x;
     const distanceY = touchStartRef.current.y - touchEndRef.current.y;
-    
     const isHorizontalSwipe = Math.abs(distanceX) > Math.abs(distanceY) * 2; 
     const isBigEnough = Math.abs(distanceX) > 100; 
 
@@ -176,7 +172,6 @@ export default function CalendarApp() {
       if (distanceX > 0) handleNextMonth();
       else handlePrevMonth();
     }
-    
     touchStartRef.current = null;
     touchEndRef.current = null;
   };
@@ -189,7 +184,6 @@ export default function CalendarApp() {
 
   const handleCellClick = (dayObj, slotIndex) => {
     if (viewMode === 'stats') return;
-
     const dateKey = `${dayObj.year}-${dayObj.month}-${dayObj.day}`;
     setCalendarData(prev => {
       const dayData = prev[dateKey] || {};
@@ -298,15 +292,15 @@ export default function CalendarApp() {
 
   return (
     <div 
-      className="min-h-screen w-full bg-gray-50 text-slate-800 font-sans select-none overflow-x-hidden transition-colors duration-300"
+      className="min-h-screen w-full bg-gray-50 text-slate-800 font-sans select-none overflow-x-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleSwipe}
     >
-      <div className="max-w-md mx-auto min-h-screen flex flex-col p-4 relative">
+      <div className="max-w-md w-full mx-auto min-h-screen flex flex-col p-4 relative">
         
         {/* 標題與導航區 */}
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex justify-between items-start mb-2 w-full">
           <div className="flex flex-col items-start space-y-1">
             {viewMode === 'calendar' ? (
               isEditingTitle ? (
@@ -351,14 +345,14 @@ export default function CalendarApp() {
           </div>
         </div>
 
-        {/* 主要內容區 */}
-        <div className="flex-grow flex flex-col">
+        {/* 主要內容區 - 確保 w-full */}
+        <div className="flex-grow flex flex-col w-full">
           
           {viewMode === 'calendar' ? (
             /* ================= 月曆模式 ================= */
-            <>
+            <div className="w-full flex flex-col">
               {/* 星期列 */}
-              <div className="flex mb-1 pr-[10%]"> 
+              <div className="flex mb-1 pr-[10%] w-full"> 
                 {WEEKDAY_LANGS[weekdayLang].map((day, i) => (
                   <div 
                     key={i} 
@@ -370,11 +364,12 @@ export default function CalendarApp() {
                 ))}
               </div>
 
-              {/* 月曆表格 */}
+              {/* 月曆表格 - 移除外層邊框，將邊框移至內部 Days Wrapper */}
               <div className="flex flex-col w-full">
                  {weeks.map((week, wIndex) => (
                    <div key={wIndex} className="flex w-full h-14 md:h-16">
-                     <div className={`flex flex-1 border-b border-l border-r border-opacity-50 overflow-hidden border-gray-200 bg-white
+                     {/* Days Wrapper: 這裡加上邊框，形成月曆的框 */}
+                     <div className={`flex flex-1 border-l border-r border-b border-gray-200 bg-white overflow-hidden
                          ${wIndex === 0 ? 'border-t rounded-t-lg' : ''}
                          ${wIndex === weeks.length - 1 ? 'rounded-b-lg' : ''}`}>
                         
@@ -390,7 +385,7 @@ export default function CalendarApp() {
                               <div 
                                 key={sIdx}
                                 onClick={() => handleCellClick(dayObj, sIdx)}
-                                className="w-full h-full cursor-pointer transition-colors duration-200 border-opacity-30 border-gray-200"
+                                className="w-full h-full cursor-pointer transition-colors duration-200 border-r border-b border-gray-200 border-opacity-30"
                                 style={{ 
                                   backgroundColor: bgColor,
                                   borderRightWidth: (sIdx % 2 === 0) ? '1px' : '0px',
@@ -403,7 +398,7 @@ export default function CalendarApp() {
                           return (
                             <div 
                               key={dIndex} 
-                              className="relative flex-1 border-r border-opacity-50 last:border-r-0 border-gray-200 bg-white"
+                              className="relative flex-1 border-r border-gray-200 last:border-r-0 bg-white"
                               style={{ 
                                 opacity: dayObj.isCurrentMonth ? 1 : 0.4,
                               }}
@@ -424,7 +419,8 @@ export default function CalendarApp() {
                         })}
                      </div>
                      
-                     <div className="w-[10%] flex items-center justify-center">
+                     {/* W1~W6 欄位 - 移除邊框，只保留左分隔線 */}
+                     <div className="w-[10%] flex items-center justify-center bg-white">
                         <input 
                           type="text" 
                           placeholder={`W${wIndex + 1}`}
@@ -437,8 +433,8 @@ export default function CalendarApp() {
                  ))}
               </div>
 
-              {/* 顏色選擇區 (已優化：3欄、置中、緊湊) */}
-              <div className="mt-4 animate-fade-in flex-1 flex justify-center">
+              {/* 顏色選擇區 (3欄，置中) */}
+              <div className="mt-4 animate-fade-in flex-1 flex justify-center w-full">
                  <div className="grid grid-cols-3 gap-x-6 gap-y-3 mb-2 w-fit mx-auto">
                     {colors.map((color, idx) => (
                       <div key={color.id} className="flex items-center justify-center gap-2">
@@ -456,29 +452,29 @@ export default function CalendarApp() {
                             newColors[idx].label = e.target.value;
                             setColors(newColors);
                           }}
-                          className="w-16 text-xs bg-transparent border-b border-transparent focus:border-gray-400 outline-none text-slate-700 text-center"
+                          className="w-14 text-xs bg-transparent border-b border-transparent focus:border-gray-400 outline-none text-slate-700 text-center"
                         />
                       </div>
                     ))}
                  </div>
               </div>
-            </>
+            </div>
           ) : (
             /* ================= 統計模式 ================= */
             <div className="flex flex-col w-full gap-4 animate-fade-in">
               
               {stats.totalClicks === 0 ? (
-                // --- 空狀態顯示 ---
-                <div className="flex flex-col items-center justify-center h-96 opacity-50 border rounded-xl border-dashed border-gray-300">
+                // --- 空狀態顯示 (加上 w-full) ---
+                <div className="flex flex-col items-center justify-center h-96 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
                   <BarChart2 size={48} className="mb-4 text-gray-300" />
                   <p className="text-sm text-gray-500">尚無紀錄資料</p>
                   <p className="text-xs mt-1 text-gray-400">請切換回月曆點擊日期進行紀錄</p>
                 </div>
               ) : (
-                // --- 有資料時的顯示 ---
+                // --- 有資料時的顯示 (全都加上 w-full) ---
                 <>
                   {/* 長條圖顯示 (h-96 確保高度與月曆相仿) */}
-                  <div className="w-full h-96 p-6 rounded-xl shadow-sm flex items-end justify-around gap-2 border bg-white border-gray-100">
+                  <div className="w-full h-96 p-6 rounded-xl shadow-sm flex items-end justify-around gap-2 border bg-white border-gray-100 box-border">
                      {colors.map((color, idx) => {
                         const count = stats.colorCounts[idx];
                         const heightPercent = count > 0 ? (count / maxCount) * 100 : 0;
@@ -492,7 +488,7 @@ export default function CalendarApp() {
                              </span>
                              
                              <div 
-                               className="w-full rounded-t-md transition-all duration-500 ease-out relative"
+                               className="w-full rounded-t-md transition-all duration-500 ease-out relative hover:opacity-80"
                                style={{ 
                                  height: `${displayHeight}%`, 
                                  backgroundColor: color.hex,
@@ -508,8 +504,8 @@ export default function CalendarApp() {
                   </div>
 
                   {/* 詳細列表 */}
-                  <div className="w-full p-4 rounded-xl shadow-sm bg-white">
-                    <h3 className="text-md font-semibold mb-4 flex justify-between">
+                  <div className="w-full p-4 rounded-xl shadow-sm bg-white border border-gray-100 box-border">
+                    <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700">
                       <span>本月分佈 ({month + 1}月)</span>
                       <span className="text-xs opacity-50 self-center">與上月比較</span>
                     </h3>
@@ -521,20 +517,20 @@ export default function CalendarApp() {
                         const widthPercent = stats.totalClicks > 0 ? (count / stats.totalClicks) * 100 : 0;
 
                         return (
-                          <div key={idx} className="flex items-center gap-3">
+                          <div key={idx} className="flex items-center gap-3 w-full">
                               <div 
                                 className="w-3 h-3 rounded-full shrink-0"
                                 style={{ backgroundColor: getColor(idx) }} 
                               />
-                              <span className="text-sm w-16 truncate">{getLabel(idx)}</span>
+                              <span className="text-sm w-16 truncate text-slate-600">{getLabel(idx)}</span>
                               <div className="flex-grow h-2 rounded-full bg-gray-100 overflow-hidden">
                                 <div 
                                   className="h-full rounded-full transition-all duration-500"
                                   style={{ width: `${Math.max(widthPercent, 0)}%`, backgroundColor: getColor(idx) }}
                                 />
                               </div>
-                              <div className="w-16 text-right text-xs flex flex-col items-end">
-                                <span className="font-bold">{count}</span>
+                              <div className="w-16 text-right text-xs flex flex-col items-end shrink-0">
+                                <span className="font-bold text-slate-700">{count}</span>
                                 <span className={`font-medium ${diffColor}`}>{diffStr}</span>
                               </div>
                           </div>
@@ -548,18 +544,18 @@ export default function CalendarApp() {
           )}
 
           {/* 底部筆記 (兩模式通用) */}
-          <div className="mt-4 mb-20">
+          <div className="mt-6 mb-20 w-full">
              <div className="flex items-center justify-between mb-1">
-               <span className="text-xs font-semibold opacity-70">備註</span>
+               <span className="text-xs font-semibold opacity-70 text-slate-500">備註</span>
                <div className="flex gap-2">
-                 <button onClick={() => setBottomNotes([...bottomNotes, ""])} className="p-1 rounded-full hover:bg-gray-200">
-                    <Plus size={14} />
+                 <button onClick={() => setBottomNotes([...bottomNotes, ""])} className="p-1 rounded-full hover:bg-gray-200 transition">
+                    <Plus size={14} className="text-slate-500"/>
                  </button>
                </div>
              </div>
-             <div className="space-y-1">
+             <div className="space-y-1 w-full">
                {bottomNotes.map((note, idx) => (
-                 <div key={idx} className="flex items-center gap-2 group">
+                 <div key={idx} className="flex items-center gap-2 group w-full">
                    <input 
                      type="text"
                      value={note}
@@ -568,7 +564,7 @@ export default function CalendarApp() {
                        newNotes[idx] = e.target.value;
                        setBottomNotes(newNotes);
                      }}
-                     className="w-full bg-transparent border-b outline-none py-1 text-xs border-gray-200 text-slate-700"
+                     className="w-full bg-transparent border-b outline-none py-1 text-xs border-gray-200 text-slate-700 focus:border-slate-400 transition-colors"
                    />
                    <button 
                      onClick={() => {
@@ -586,7 +582,7 @@ export default function CalendarApp() {
         </div>
       </div>
 
-      {/* 彈出視窗：年月選擇 (自動定位到當前年月) */}
+      {/* 彈出視窗：年月選擇 */}
       {showDatePicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-xs rounded-2xl p-6 shadow-2xl bg-white text-slate-800">
@@ -647,7 +643,7 @@ export default function CalendarApp() {
             <div className="space-y-4">
                <div className="flex justify-between items-center">
                  <span>星期語言</span>
-                 <button onClick={cycleLanguage} className="text-sm font-bold bg-gray-100 px-3 py-1 rounded-md">
+                 <button onClick={cycleLanguage} className="text-sm font-bold bg-gray-100 px-3 py-1 rounded-md text-slate-600">
                    {weekdayLang.toUpperCase()}
                  </button>
                </div>
@@ -657,7 +653,7 @@ export default function CalendarApp() {
                   <div className="grid grid-cols-2 gap-3">
                     <button 
                       onClick={handleExport}
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition bg-gray-100 hover:bg-gray-200"
+                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition bg-gray-100 hover:bg-gray-200 text-slate-700"
                     >
                       <Download size={16} />
                       匯出備份
@@ -665,7 +661,7 @@ export default function CalendarApp() {
                     
                     <button 
                       onClick={handleImportTrigger}
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition bg-gray-100 hover:bg-gray-200"
+                      className="flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition bg-gray-100 hover:bg-gray-200 text-slate-700"
                     >
                       <Upload size={16} />
                       匯入備份
@@ -704,7 +700,7 @@ export default function CalendarApp() {
             <div className="flex gap-3">
               <button 
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 py-2 rounded-lg font-medium bg-gray-100 hover:bg-gray-200"
+                className="flex-1 py-2 rounded-lg font-medium bg-gray-100 hover:bg-gray-200 text-slate-700"
               >
                 取消
               </button>
