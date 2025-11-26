@@ -97,6 +97,7 @@ export default function CalendarApp() {
   const selectedYearRef = useRef(null);
   const selectedMonthRef = useRef(null);
 
+  // 修正 today 錯誤
   const today = new Date();
 
   useEffect(() => {
@@ -296,7 +297,6 @@ export default function CalendarApp() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleSwipe}
     >
-      {/* 調整 Padding p-2 讓手機畫面更寬敞 */}
       <div className="max-w-md w-full mx-auto min-h-screen flex flex-col p-2 relative">
         
         {/* 標題與導航區 */}
@@ -345,10 +345,10 @@ export default function CalendarApp() {
           </div>
         </div>
 
-        {/* 主要內容區 (強制左右分欄佈局) */}
+        {/* 主要內容區 - 使用 w-full 確保滿版 */}
         <div className="flex-grow flex flex-col w-full">
           
-          {/* 星期列 - 僅對齊左側方塊 */}
+          {/* 星期列 - 只對齊左側方塊 */}
           <div className="flex w-full">
             <div className="flex-1 flex pr-0">
               {WEEKDAY_LANGS[weekdayLang].map((day, i) => (
@@ -361,19 +361,19 @@ export default function CalendarApp() {
                 </div>
               ))}
             </div>
-            {/* 右側保留給週筆記的空白 (12%) */}
+            {/* 右側 W1 空白佔位 */}
             <div className="w-[12%] pl-2"></div>
           </div>
 
-          {/* 核心區域：左方塊(有框) + 右列表(無框) */}
+          {/* 核心佈局：強制左右分欄 */}
           <div className="flex flex-row w-full items-start">
             
-            {/* ============ 左側：主內容方塊 (有邊框) ============ */}
-            {/* min-h-[22rem] 確保統計模式高度足夠 */}
+            {/* 左側：主內容區 (月曆網格 或 長條圖) */}
+            {/* 這裡加上 flex-1 確保它自動撐滿剩餘空間，並加上邊框 */}
             <div className={`flex flex-col flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden relative min-h-[22rem]`}>
                
                {viewMode === 'calendar' ? (
-                 // --- 月曆網格 ---
+                 // === 月曆模式 ===
                  weeks.map((week, wIndex) => (
                    <div key={wIndex} className="flex w-full h-14 md:h-16 border-b border-gray-200 last:border-b-0">
                       {week.map((dayObj, dIndex) => {
@@ -423,8 +423,9 @@ export default function CalendarApp() {
                    </div>
                  ))
                ) : (
-                 // --- 統計長條圖 (放在原本月曆的框框裡) ---
-                 <div className="flex-1 w-full h-full flex flex-col pt-8 pb-2 px-2">
+                 // === 統計模式 (長條圖) ===
+                 // 這裡的 w-full h-full 確保長條圖佔滿原本月曆的位置
+                 <div className="flex-1 w-full h-full flex flex-col px-2 pb-2 pt-8">
                     {stats.totalClicks === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full opacity-50">
                         <BarChart2 size={48} className="mb-4 text-gray-300" />
@@ -435,12 +436,11 @@ export default function CalendarApp() {
                          {colors.map((color, idx) => {
                             const count = stats.colorCounts[idx];
                             const heightPercent = count > 0 ? (count / maxCount) * 100 : 0;
-                            // 確保至少有一點高度
                             const displayHeight = Math.max(heightPercent, 2); 
 
                             return (
                               <div key={idx} className="flex flex-col items-center justify-end h-full w-1/6 group relative">
-                                 {/* 數值顯示在長條上方 (pt-8 提供了空間) */}
+                                 {/* 數值顯示 */}
                                  <span className={`text-xs font-bold text-gray-500 mb-1 transition-opacity duration-200 ${count > 0 ? 'opacity-100' : 'opacity-0'}`}>
                                    {count}
                                  </span>
@@ -465,9 +465,9 @@ export default function CalendarApp() {
                )}
             </div>
 
-            {/* ============ 右側：週筆記 (無邊框) ============ */}
+            {/* 右側：週筆記 (無外框) */}
             <div className="flex flex-col w-[12%] pl-2">
-               {/* 在月曆模式下顯示 Input，統計模式下保留空白佔位 */}
+               {/* 只在月曆模式顯示輸入框，統計模式留白佔位 */}
                {viewMode === 'calendar' ? (
                  weeks.map((week, wIndex) => (
                    <div key={wIndex} className="flex w-full h-14 md:h-16 items-center justify-center">
@@ -481,16 +481,16 @@ export default function CalendarApp() {
                    </div>
                  ))
                ) : (
-                 // 統計模式下的佔位符，保持高度一致
+                 // 統計模式下的佔位，保持寬度一致
                  <div className="w-full h-full"></div>
                )}
             </div>
 
           </div>
 
-          {/* 下方區域：根據模式顯示不同內容 */}
+          {/* 下方區域 */}
           {viewMode === 'calendar' ? (
-            /* 月曆模式：顏色選擇區 */
+            /* 顏色選擇區 */
             <div className="mt-4 animate-fade-in flex-1 flex justify-center w-full">
                <div className="grid grid-cols-3 gap-x-6 gap-y-3 mb-2 w-fit mx-auto">
                   {colors.map((color, idx) => (
@@ -516,7 +516,7 @@ export default function CalendarApp() {
                </div>
             </div>
           ) : (
-            /* 統計模式：詳細數據列表 (放在框外) */
+            /* 詳細數據列表 (在框外) */
             <div className="w-full p-2 bg-transparent mt-4 animate-fade-in">
               <div className="flex justify-between items-center mb-4 px-2">
                  <h3 className="text-md font-semibold text-slate-700">本月分佈 ({month + 1}月)</h3>
@@ -554,7 +554,7 @@ export default function CalendarApp() {
             </div>
           )}
 
-          {/* 底部筆記 (兩模式通用) */}
+          {/* 底部筆記 */}
           <div className="mt-6 mb-20 w-full px-1">
              <div className="flex items-center justify-between mb-1">
                <span className="text-xs font-semibold opacity-70 text-slate-500">備註</span>
@@ -602,6 +602,7 @@ export default function CalendarApp() {
                <button onClick={() => setShowDatePicker(false)}><X size={20} /></button>
              </div>
              <div className="flex gap-4 justify-center items-center h-48">
+                {/* 年份選擇 */}
                 <div className="flex flex-col items-center gap-2 overflow-y-auto h-full scrollbar-hide snap-y snap-mandatory py-16">
                    {Array.from({length: 10}).map((_, i) => {
                      const y = year - 5 + i;
@@ -619,6 +620,7 @@ export default function CalendarApp() {
                      )
                    })}
                 </div>
+                {/* 月份選擇 */}
                 <div className="flex flex-col items-center gap-2 overflow-y-auto h-full scrollbar-hide snap-y snap-mandatory py-16">
                    {Array.from({length: 12}).map((_, i) => (
                       <button 
