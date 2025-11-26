@@ -97,7 +97,6 @@ export default function CalendarApp() {
   const selectedYearRef = useRef(null);
   const selectedMonthRef = useRef(null);
 
-  // 這裡補上了 today 的定義
   const today = new Date();
 
   useEffect(() => {
@@ -351,28 +350,31 @@ export default function CalendarApp() {
           {viewMode === 'calendar' ? (
             /* ================= 月曆模式 ================= */
             <div className="w-full flex flex-col">
-              {/* 星期列 */}
-              <div className="flex mb-1 pr-[10%] w-full"> 
-                {WEEKDAY_LANGS[weekdayLang].map((day, i) => (
-                  <div 
-                    key={i} 
-                    onClick={cycleLanguage}
-                    className="flex-1 text-center text-[10px] py-1 cursor-pointer select-none font-medium text-slate-400"
-                  >
-                    {day}
-                  </div>
-                ))}
+              
+              {/* 星期列 - 只在月曆左側顯示 */}
+              <div className="flex w-full">
+                <div className="flex-1 flex pr-0">
+                  {WEEKDAY_LANGS[weekdayLang].map((day, i) => (
+                    <div 
+                      key={i} 
+                      onClick={cycleLanguage}
+                      className="flex-1 text-center text-[10px] py-1 cursor-pointer select-none font-medium text-slate-400"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                {/* 對齊右側筆記的空白 */}
+                <div className="w-[10%] pl-2"></div>
               </div>
 
-              {/* 月曆表格 - 移除外層邊框，將邊框移至內部 Days Wrapper */}
-              <div className="flex flex-col w-full">
-                 {weeks.map((week, wIndex) => (
-                   <div key={wIndex} className="flex w-full h-14 md:h-16">
-                     {/* Days Wrapper: 這裡加上邊框，形成月曆的框 */}
-                     <div className={`flex flex-1 border-l border-r border-b border-gray-200 bg-white overflow-hidden
-                         ${wIndex === 0 ? 'border-t rounded-t-lg' : ''}
-                         ${wIndex === weeks.length - 1 ? 'rounded-b-lg' : ''}`}>
-                        
+              {/* 內容區：左邊月曆(有框) + 右邊筆記(無框) */}
+              <div className="flex flex-row w-full items-start">
+                
+                {/* 左側：月曆網格 (有框線) */}
+                <div className="flex flex-col flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                   {weeks.map((week, wIndex) => (
+                     <div key={wIndex} className="flex w-full h-14 md:h-16 border-b border-gray-200 last:border-b-0">
                         {week.map((dayObj, dIndex) => {
                           const isToday = dayObj.day === today.getDate() && dayObj.month === today.getMonth() && dayObj.year === today.getFullYear();
                           const dateKey = `${dayObj.year}-${dayObj.month}-${dayObj.day}`;
@@ -385,11 +387,11 @@ export default function CalendarApp() {
                               <div 
                                 key={sIdx}
                                 onClick={() => handleCellClick(dayObj, sIdx)}
-                                className="w-full h-full cursor-pointer transition-colors duration-200 border-r border-b border-gray-200 border-opacity-30"
+                                className="w-full h-full cursor-pointer transition-colors duration-200 border-r border-b border-gray-200 border-opacity-30 last:border-r-0"
                                 style={{ 
                                   backgroundColor: bgColor,
-                                  borderRightWidth: (sIdx % 2 === 0) ? '1px' : '0px',
-                                  borderBottomWidth: (sIdx < gridMode - 2) ? '1px' : '0px'
+                                  borderBottomWidth: (sIdx < gridMode - 2) ? '1px' : '0px',
+                                  borderRightWidth: (sIdx % 2 === 0) ? '1px' : '0px'
                                 }}
                               />
                             );
@@ -418,19 +420,24 @@ export default function CalendarApp() {
                           );
                         })}
                      </div>
-                     
-                     {/* W1~W6 欄位 - 移除邊框，只保留左分隔線 */}
-                     <div className="w-[10%] flex items-center justify-center bg-white">
+                   ))}
+                </div>
+
+                {/* 右側：W1~W6 (無框線，保持間距) */}
+                <div className="flex flex-col w-[10%] pl-2">
+                   {weeks.map((week, wIndex) => (
+                     <div key={wIndex} className="flex w-full h-14 md:h-16 items-center justify-center">
                         <input 
                           type="text" 
                           placeholder={`W${wIndex + 1}`}
                           value={weeklyNotes[`${year}-${month}-${wIndex}`] || ''}
                           onChange={(e) => setWeeklyNotes({...weeklyNotes, [`${year}-${month}-${wIndex}`]: e.target.value})}
-                          className="w-full h-full text-center bg-transparent outline-none text-[10px] placeholder:text-opacity-30 text-slate-500 placeholder:text-slate-300"
+                          className="w-full h-full text-center bg-transparent outline-none text-[10px] placeholder:text-opacity-30 text-slate-500 placeholder:text-slate-300 border-b border-transparent focus:border-gray-200"
                         />
                      </div>
-                   </div>
-                 ))}
+                   ))}
+                </div>
+
               </div>
 
               {/* 顏色選擇區 (3欄，置中) */}
@@ -463,18 +470,21 @@ export default function CalendarApp() {
             /* ================= 統計模式 ================= */
             <div className="flex flex-col w-full gap-4 animate-fade-in">
               
+              {/* 移除標題留白，直接顯示內容 */}
+
               {stats.totalClicks === 0 ? (
-                // --- 空狀態顯示 (加上 w-full) ---
+                // --- 空狀態顯示 ---
                 <div className="flex flex-col items-center justify-center h-96 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
                   <BarChart2 size={48} className="mb-4 text-gray-300" />
                   <p className="text-sm text-gray-500">尚無紀錄資料</p>
                   <p className="text-xs mt-1 text-gray-400">請切換回月曆點擊日期進行紀錄</p>
                 </div>
               ) : (
-                // --- 有資料時的顯示 (全都加上 w-full) ---
+                // --- 有資料時的顯示 ---
                 <>
-                  {/* 長條圖顯示 (h-96 確保高度與月曆相仿) */}
-                  <div className="w-full h-96 p-6 rounded-xl shadow-sm flex items-end justify-around gap-2 border bg-white border-gray-100 box-border">
+                  {/* 長條圖顯示 - 放在框框內 */}
+                  {/* 增加 pt-10 確保上方數字不被切到 */}
+                  <div className="w-full h-96 p-6 pt-10 rounded-xl shadow-sm flex items-end justify-around gap-2 border bg-white border-gray-200 box-border overflow-hidden">
                      {colors.map((color, idx) => {
                         const count = stats.colorCounts[idx];
                         const heightPercent = count > 0 ? (count / maxCount) * 100 : 0;
@@ -482,7 +492,7 @@ export default function CalendarApp() {
 
                         return (
                           <div key={idx} className="flex flex-col items-center justify-end h-full w-1/6 group relative">
-                             {/* 懸浮顯示數值 */}
+                             {/* 懸浮顯示數值 - 絕對定位 */}
                              <span className={`absolute -top-6 text-xs font-bold text-gray-500 transition-opacity duration-200 ${count > 0 ? 'opacity-100' : 'opacity-0'}`}>
                                {count}
                              </span>
@@ -503,21 +513,24 @@ export default function CalendarApp() {
                       })}
                   </div>
 
-                  {/* 詳細列表 */}
-                  <div className="w-full p-4 rounded-xl shadow-sm bg-white border border-gray-100 box-border">
-                    <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700">
+                  {/* 詳細列表 - 放在框框外，無邊框 */}
+                  <div className="w-full p-2 bg-transparent mt-2">
+                    <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700 px-2">
                       <span>本月分佈 ({month + 1}月)</span>
                       <span className="text-xs opacity-50 self-center">與上月比較</span>
                     </h3>
                     <div className="space-y-4">
                       {stats.monthlyCounts.map((count, idx) => {
+                        // 如果該分類無數據，不顯示
+                        if (count === 0 && stats.colorCounts[idx] === 0) return null;
+
                         const diff = count - stats.lastMonthCounts[idx];
                         const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '-' : `${diff}`;
                         const diffColor = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'opacity-30';
                         const widthPercent = stats.totalClicks > 0 ? (count / stats.totalClicks) * 100 : 0;
 
                         return (
-                          <div key={idx} className="flex items-center gap-3 w-full">
+                          <div key={idx} className="flex items-center gap-3 w-full px-2">
                               <div 
                                 className="w-3 h-3 rounded-full shrink-0"
                                 style={{ backgroundColor: getColor(idx) }} 
