@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe
+  Share2, Globe, Camera
 } from 'lucide-react';
 
 // --- Constants & Config ---
@@ -18,7 +18,6 @@ const COLOR_DEFINITIONS = {
   purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', borderLight: 'border-purple-300', borderDark: 'border-purple-500/50', textLight: 'text-purple-500', textDark: 'text-purple-300' },
 };
 
-// Initial state only needs IDs and labels, styling is derived
 const INITIAL_CATEGORIES = [
   { id: 'red', defaultLabel: '重要' },
   { id: 'orange', defaultLabel: '運動' },
@@ -34,7 +33,6 @@ const WEEK_LABELS = {
   en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
 };
 
-// Use stable IDs for default notes
 const DEFAULT_NOTES = [
   { id: 'def-0', text: '' },
   { id: 'def-1', text: '' },
@@ -61,7 +59,8 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
   const [viewYear, setViewYear] = useState(currentYear);
 
   return (
-    <div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 ${isDark ? 'bg-slate-900/40' : 'bg-slate-900/20'}`} onClick={onClose}>
+    // FIX: Changed absolute to fixed to ensure centering on viewport
+    <div className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 ${isDark ? 'bg-slate-900/60' : 'bg-slate-900/20'}`} onClick={onClose}>
       <div 
         className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/50'}`} 
         onClick={(e) => e.stopPropagation()}
@@ -129,7 +128,8 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
 
   if (mode === 'confirm_reset') {
     return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+      // FIX: Changed absolute to fixed
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
         <div className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${isDark ? 'bg-slate-800 border-red-900/30' : 'bg-white border-red-100'}`} onClick={(e) => e.stopPropagation()}>
            <div className="flex flex-col items-center text-center gap-3 mb-6">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 ${isDark ? 'bg-red-900/50 text-red-400' : 'bg-red-100 text-red-500'}`}>
@@ -161,7 +161,8 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+    // FIX: Changed absolute to fixed
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} 
         onClick={(e) => e.stopPropagation()}
@@ -297,13 +298,14 @@ export default function NewCalendarApp() {
   
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
+  const [isScreenshotMode, setIsScreenshotMode] = useState(false);
 
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v45_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v47_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -318,11 +320,11 @@ export default function NewCalendarApp() {
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v45_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v47_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v45_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v47_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -336,14 +338,14 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v45_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v45_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v45_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v45_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v45_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v45_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v45_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v45_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v47_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v47_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v47_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v47_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v47_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v47_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v47_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v47_darkMode', JSON.stringify(darkMode));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode]);
 
   const year = currentDate.getFullYear();
@@ -382,6 +384,7 @@ export default function NewCalendarApp() {
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   const handleCellClick = (dateKey, subIndex) => {
+    if (isScreenshotMode) return;
     const currentRecord = records[dateKey] || {};
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
@@ -620,8 +623,21 @@ export default function NewCalendarApp() {
             />
         )}
         
+        {/* Screenshot Overlay Hint */}
+        {isScreenshotMode && (
+          <div 
+            className="fixed bottom-8 left-0 right-0 z-50 flex justify-center"
+            onClick={() => setIsScreenshotMode(false)}
+          >
+             <div className={`backdrop-blur-md px-6 py-3 rounded-full shadow-xl flex items-center gap-3 animate-bounce cursor-pointer border ${darkMode ? 'bg-slate-800/80 text-white border-slate-700' : 'bg-slate-800/80 text-white border-white/20'}`}>
+                <Camera size={20} />
+                <span className="font-bold text-sm">截圖模式中 (點擊任意處退出)</span>
+             </div>
+          </div>
+        )}
+        
         {/* Reorder Hint */}
-        {reorderMode && (
+        {(reorderMode && !isScreenshotMode) && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-in fade-in flex items-center gap-2">
              <ArrowRightLeft size={14} />
              <span>點擊項目以交換順序</span>
@@ -629,7 +645,7 @@ export default function NewCalendarApp() {
         )}
 
         {/* Header Section */}
-        <div className="pt-8 pb-2 px-5 flex justify-between items-start">
+        <div className={`pt-8 pb-2 px-5 flex justify-between items-start ${isScreenshotMode ? 'mb-0' : ''}`}>
           <div className="flex flex-col items-start gap-0.5 flex-1">
             <input
               value={appTitle}
@@ -648,19 +664,22 @@ export default function NewCalendarApp() {
                    </h2>
                 </div>
                 
-                {/* Today Button */}
-                <button 
-                  onClick={handleJumpToToday}
-                  className={`flex items-center gap-1 pl-2 pr-3 py-1 rounded-full transition-colors ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-800'}`}
-                  title="回到今天"
-                >
-                  <CalendarIcon size={14} />
-                  <span className="text-[10px] font-bold">Today</span>
-                </button>
+                {/* Today Button - Hidden in Screenshot Mode */}
+                {!isScreenshotMode && (
+                  <button 
+                    onClick={handleJumpToToday}
+                    className={`flex items-center gap-1 pl-2 pr-3 py-1 rounded-full transition-colors ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-800'}`}
+                    title="回到今天"
+                  >
+                    <CalendarIcon size={14} />
+                    <span className="text-[10px] font-bold">Today</span>
+                  </button>
+                )}
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          {/* Icons Column - Hidden in Screenshot Mode */}
+          <div className={`flex flex-col items-end gap-2 ${isScreenshotMode ? 'hidden' : ''}`}>
             <div className="flex items-center gap-2">
               <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 {gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}
@@ -682,7 +701,7 @@ export default function NewCalendarApp() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 px-2 pb-6 outline-none overflow-visible">
+        <div className={`flex-1 px-2 pb-6 outline-none overflow-visible`}>
           
           {view === 'calendar' ? (
             <>
@@ -731,8 +750,9 @@ export default function NewCalendarApp() {
                                       ${finalColor} hover:opacity-80
                                     `}
                                  >
+                                    {/* GRID LINES UPDATED: More visible in both modes */}
                                     <div className={`absolute inset-0 pointer-events-none 
-                                       ${darkMode ? 'border-slate-700/50' : 'border-slate-200'}
+                                       ${darkMode ? 'border-slate-600' : 'border-slate-300'}
                                        ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
                                        ${gridMode === 4 && i === 1 ? 'border-b-[0.5px]' : ''}
                                        ${gridMode === 4 && i === 2 ? 'border-r-[0.5px]' : ''}
@@ -750,7 +770,7 @@ export default function NewCalendarApp() {
                                    className={`
                                      relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors
                                      ${isCurrent 
-                                        ? (darkMode ? 'bg-slate-800 border border-slate-600' : 'bg-white border border-slate-300')
+                                        ? (darkMode ? 'bg-slate-800 border border-slate-500' : 'bg-white border border-slate-400')
                                         : (darkMode ? 'bg-slate-800/30 border border-slate-800 opacity-40' : 'bg-white/50 border border-slate-200 opacity-40')
                                      }
                                    `}>
@@ -787,7 +807,7 @@ export default function NewCalendarApp() {
               </div>
 
               {/* Color Palette */}
-              <div className="mt-6 px-1">
+              <div className={`mt-6 px-1 ${isScreenshotMode ? 'hidden' : ''}`}>
                  <div className="flex items-center justify-start gap-2 mb-3">
                     <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>Categories</h3>
                     <button 
@@ -843,7 +863,7 @@ export default function NewCalendarApp() {
               </div>
 
               {/* Footer Notes */}
-              <div className="mt-8 mb-4 px-1">
+              <div className={`mt-8 mb-4 px-1 ${isScreenshotMode ? 'hidden' : ''}`}>
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>Memo ({month + 1}月)</h3>
@@ -876,7 +896,17 @@ export default function NewCalendarApp() {
             </>
           ) : (
             // --- Statistics View ---
-            <div className="h-full flex flex-col justify-center pb-8 animate-in fade-in zoom-in duration-300 px-3">
+            <div className={`h-full flex flex-col ${isScreenshotMode ? 'justify-start pt-2' : 'justify-center'} pb-8 animate-in fade-in zoom-in duration-300 px-3`}>
+               <div className={`flex justify-end mb-4 ${isScreenshotMode ? 'opacity-0 h-0 overflow-hidden mb-0' : ''}`}>
+                  <button 
+                    onClick={() => setIsScreenshotMode(true)}
+                    className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-600 bg-slate-100'}`}
+                  >
+                    <Share2 size={14} />
+                    <span>匯出圖片</span>
+                  </button>
+               </div>
+
                <div className="space-y-4">
                  {categories.map((cat) => {
                     const current = stats.currentCounts[cat.id];
