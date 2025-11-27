@@ -999,9 +999,9 @@ export default function NewCalendarApp() {
               </div>
             </>
           ) : (
-            // --- Statistics View (NEW V66 LAYOUT - Balanced) ---
-            <div className="h-full flex flex-col justify-start pt-4 pb-8 animate-in fade-in zoom-in duration-300 px-3">
-               <div className="space-y-4">
+            // --- Statistics View (FINAL V71 - Compact Card Layout 2x3 Grid) ---
+            <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2 overflow-y-auto no-scrollbar">
+               <div className="grid grid-cols-2 gap-2">
                  {categories.map((cat) => {
                     const current = stats.currentCounts[cat.id];
                     const prev = stats.prevCounts[cat.id];
@@ -1028,46 +1028,52 @@ export default function NewCalendarApp() {
                     }
 
                     return (
-                      <div key={cat.id} className={`w-full py-2 border-b ${darkMode ? 'border-slate-800' : 'border-slate-50'} last:border-0`}>
-                         {/* Row 1: Category Label (Left) + Current Count (Below Label, Smaller 3xl) */}
-                         <div className="flex flex-col items-start mb-2">
-                            <div className="flex items-center gap-2 mb-1">
-                               <div className={`w-3 h-3 rounded-full ${darkMode ? style.dark : style.light}`}></div>
-                               <span className={`font-bold text-sm ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+                      <div key={cat.id} className={`w-full p-2.5 rounded-2xl border ${darkMode ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-white/80'} shadow-sm flex flex-col`}>
+                         
+                         {/* Header: Label */}
+                         <div className="flex items-center gap-2 mb-2">
+                            <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
+                            <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+                         </div>
+
+                         {/* Middle: Big Number (Left) vs Stats (Right) */}
+                         <div className="flex justify-between items-end mb-1.5 px-0.5">
+                            <div className="flex items-baseline gap-1">
+                                <span className={`text-2xl font-black leading-none tracking-tight ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                                   {current}
+                                </span>
+                                <span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                   本月次數
+                                </span>
                             </div>
-                            
-                            <div className="flex items-baseline gap-1 ml-5">
-                                {/* OPTIMIZED: Reduced from 4xl to 3xl for balance */}
-                                <span className={`text-3xl font-bold leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
-                                <span className={`text-[10px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>本月次數</span>
+                            <div className="flex flex-col items-end">
+                               <span className={`text-[9px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  頻率: {freqText}
+                               </span>
+                               <span className={`text-[9px] font-bold ${diffColorClass}`}>
+                                  {diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} vs 上月
+                               </span>
                             </div>
                          </div>
 
-                         {/* Row 2: Freq & Diff (Right Aligned) */}
-                         <div className="flex justify-end items-center gap-4 mb-1.5 px-1">
-                             <span className={`text-xs font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                頻率: {freqText}
-                             </span>
-                             <span className={`text-xs font-bold ${diffColorClass}`}>
-                                {diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} <span className={`font-normal text-[10px] ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>vs 上月</span>
-                             </span>
-                         </div>
-                         
-                         {/* Row 3: Visual Bar */}
-                         <div className={`h-2 w-full rounded-full overflow-hidden relative mb-1.5 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                         {/* Bar */}
+                         <div className={`h-1 w-full rounded-full overflow-hidden relative mb-2 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}>
                             <div 
                                className={`h-full rounded-full transition-all duration-500 ease-out ${darkMode ? style.dark : style.light}`}
                                style={{ width: `${Math.max(barWidth, 2)}%` }} 
                             ></div>
                          </div>
 
-                         {/* Row 4: Total Count + Date Range (Increased legibility) */}
-                         <div className="flex justify-end">
-                            {/* OPTIMIZED: Increased text size and weight for readability */}
-                            <span className={`text-[11px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                               截至今日總計: {stats.totalCounts[cat.id]} 
-                               {rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}
+                         {/* Footer: Total & Range */}
+                         <div className="flex justify-between items-center mt-auto">
+                            <span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                               總計: {stats.totalCounts[cat.id]}
                             </span>
+                            {rangeInfo.hasData && (
+                                <span className={`text-[8px] ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                                   ({rangeInfo.min} ~ {rangeInfo.max})
+                                </span>
+                            )}
                          </div>
                       </div>
                     )
