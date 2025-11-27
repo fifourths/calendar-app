@@ -3,10 +3,29 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, Camera, Share2
+  Globe
 } from 'lucide-react';
 
 // --- Constants & Config ---
+
+// The Grid Icon SVG (Data URI)
+// Design: White squircle background with 3x3 colored dots matching the app theme
+const APP_ICON_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="0" y="0" width="512" height="512" rx="115" ry="115" fill="#ffffff"/>
+  <circle cx="128" cy="128" r="48" fill="#fca5a5"/> 
+  <circle cx="256" cy="128" r="48" fill="#fdba74"/> 
+  <circle cx="384" cy="128" r="48" fill="#fde047"/> 
+  <circle cx="128" cy="256" r="48" fill="#6ee7b7"/> 
+  <circle cx="256" cy="256" r="48" fill="#93c5fd"/> 
+  <circle cx="384" cy="256" r="48" fill="#d8b4fe"/> 
+  <circle cx="128" cy="384" r="48" fill="#f1f5f9"/> 
+  <circle cx="256" cy="384" r="48" fill="#f1f5f9"/> 
+  <circle cx="384" cy="384" r="48" fill="#f1f5f9"/> 
+</svg>
+`.trim().replace(/\n/g, '');
+
+const APP_ICON_URI = `data:image/svg+xml,${encodeURIComponent(APP_ICON_SVG)}`;
 
 // Static definitions for colors to support robust dark mode switching
 const COLOR_DEFINITIONS = {
@@ -164,9 +183,7 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
         className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} 
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6 px-1">
-           <h3 className={`text-lg font-bold ${titleClass}`}>設定與資料</h3>
-        </div>
+        <h3 className={`text-lg font-bold mb-6 px-1 ${titleClass}`}>設定與資料</h3>
         
         <div className="space-y-3">
           <button 
@@ -281,6 +298,7 @@ export default function NewCalendarApp() {
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
   
+  // FIXED: categories is now state again to allow reorder/update
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -300,10 +318,29 @@ export default function NewCalendarApp() {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
+  // --- AUTO-INJECT FAVICON ---
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = APP_ICON_URI;
+    document.head.appendChild(link);
+
+    const appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    appleLink.href = APP_ICON_URI;
+    document.head.appendChild(appleLink);
+
+    return () => {
+      document.head.removeChild(link);
+      document.head.removeChild(appleLink);
+    };
+  }, []);
+
   // Persistence: Local Storage
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v51_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v52_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -317,12 +354,19 @@ export default function NewCalendarApp() {
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
+    load('categoryOrder', (order) => {
+       // Restore category order if saved
+       if(order && Array.isArray(order)) {
+           const ordered = order.map(id => categories.find(c => c.id === id)).filter(Boolean);
+           if(ordered.length === categories.length) setCategories(ordered);
+       }
+    });
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v51_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v52_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v51_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v52_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -336,14 +380,15 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v51_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v51_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v51_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v51_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v51_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v51_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v51_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v51_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v52_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v52_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v52_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v52_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v52_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v52_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v52_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v52_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v52_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode]);
 
   const year = currentDate.getFullYear();
@@ -877,7 +922,7 @@ export default function NewCalendarApp() {
             </>
           ) : (
             // --- Statistics View ---
-            <div className="h-full flex flex-col justify-start pb-8 animate-in fade-in zoom-in duration-300 px-3 pt-4">
+            <div className="h-full flex flex-col justify-start pt-4 pb-8 animate-in fade-in zoom-in duration-300 px-3">
                <div className="space-y-4">
                  {categories.map((cat) => {
                     const current = stats.currentCounts[cat.id];
@@ -907,7 +952,7 @@ export default function NewCalendarApp() {
                             <div className="flex flex-col items-end">
                                 <div className="flex items-baseline gap-2">
                                     <span className={`text-2xl font-bold leading-none ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
-                                    <span className={`text-[10px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>/ {stats.totalCounts[cat.id]}</span>
+                                    <span className={`text-[10px] text-slate-400 dark:text-slate-500 font-medium`}>/ {stats.totalCounts[cat.id]}</span>
                                 </div>
                                 <span className={`text-[8px] font-bold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                     Avg: {freqText}
