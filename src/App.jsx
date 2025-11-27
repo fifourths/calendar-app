@@ -287,6 +287,7 @@ export default function CalendarApp() {
   const stats = getStats();
   const getColor = (idx) => colors[idx].hex;
   const getLabel = (idx) => colors[idx].label;
+  const maxCount = Math.max(...stats.colorCounts, 1);
 
   return (
     <div 
@@ -295,8 +296,8 @@ export default function CalendarApp() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleSwipe}
     >
-      {/* 最外層容器：確保滿版，移除內距 p-2 改為 px-1 或更小 */}
-      <div className="w-full min-h-screen flex flex-col p-1 relative">
+      {/* w-full 確保手機滿版 */}
+      <div className="w-full max-w-full mx-auto min-h-screen flex flex-col p-1 relative">
         
         {/* 標題與導航區 */}
         <div className="flex justify-between items-start mb-2 w-full px-1">
@@ -344,7 +345,7 @@ export default function CalendarApp() {
           </div>
         </div>
 
-        {/* 主要內容區 - 確保 w-full */}
+        {/* 主要內容區 */}
         <div className="flex-grow flex flex-col w-full">
           
           {viewMode === 'calendar' ? (
@@ -364,14 +365,13 @@ export default function CalendarApp() {
                     </div>
                   ))}
                 </div>
-                {/* 右側對應 W1~W6 的空白 (12%) */}
                 <div className="w-[12%] pl-2"></div>
               </div>
 
-              {/* 內容區：左邊月曆(有框) + 右邊筆記(無框) */}
+              {/* 內容區 */}
               <div className="flex flex-row w-full items-start">
                 
-                {/* 左側：月曆網格 (圓角邊框) */}
+                {/* 左側：月曆網格 (有框) */}
                 <div className="flex flex-col flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
                    {weeks.map((week, wIndex) => (
                      <div key={wIndex} className="flex w-full h-14 md:h-16 border-b border-gray-200 last:border-b-0">
@@ -423,7 +423,7 @@ export default function CalendarApp() {
                    ))}
                 </div>
 
-                {/* 右側：W1~W6 (無邊框) */}
+                {/* 右側：W1~W6 (無框) */}
                 <div className="flex flex-col w-[12%] pl-2">
                    {weeks.map((week, wIndex) => (
                      <div key={wIndex} className="flex w-full h-14 md:h-16 items-center justify-center">
@@ -441,7 +441,7 @@ export default function CalendarApp() {
               </div>
 
               {/* 顏色選擇區 (3欄，置中) */}
-              <div className="mt-4 animate-fade-in flex-1 flex justify-center w-full">
+              <div className="mt-4 flex justify-center w-full">
                  <div className="grid grid-cols-3 gap-x-6 gap-y-3 mb-2 w-fit mx-auto">
                     {colors.map((color, idx) => (
                       <div key={color.id} className="flex items-center justify-center gap-2">
@@ -468,75 +468,72 @@ export default function CalendarApp() {
             </div>
           ) : (
             /* ================= 統計模式 ================= */
-            <div className="flex flex-col w-full gap-4 animate-fade-in">
-              
-              {/* 標題佔位符，保持頂部對齊 */}
-              <div className="h-[1.5rem] w-full"></div>
-
-              {stats.totalClicks === 0 ? (
-                // --- 空狀態 (Full Width) ---
-                <div className="flex flex-col items-center justify-center h-96 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
-                  <BarChart2 size={48} className="mb-4 text-gray-300" />
-                  <p className="text-sm text-gray-500">尚無紀錄資料</p>
-                  <p className="text-xs mt-1 text-gray-400">請切換回月曆點擊日期進行紀錄</p>
+            <div className="flex flex-col w-full gap-4 animate-fade-in mt-2">
+              {/* 1. 本月分佈列表 (移到上方) */}
+              <div className="w-full p-2 bg-transparent">
+                <div className="flex justify-between items-center mb-4 px-2">
+                    <h3 className="text-md font-semibold text-slate-700">本月分佈 ({month + 1}月)</h3>
+                    <span className="text-xs opacity-50">與上月比較</span>
                 </div>
-              ) : (
-                // --- 統計圖表 (Full Width) ---
-                <>
-                  {/* 1. 本月分佈列表 (移到上方) */}
-                  <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
-                    <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700">
-                      <span>本月分佈 ({month + 1}月)</span>
-                      <span className="text-xs opacity-50 self-center">與上月比較</span>
-                    </h3>
-                    <div className="space-y-4">
-                      {stats.monthlyCounts.map((count, idx) => {
-                        const diff = count - stats.lastMonthCounts[idx];
-                        const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '-' : `${diff}`;
-                        const diffColor = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'opacity-30';
-                        const widthPercent = stats.totalClicks > 0 ? (count / stats.totalClicks) * 100 : 0;
+                <div className="space-y-4">
+                  {stats.monthlyCounts.map((count, idx) => {
+                    const diff = count - stats.lastMonthCounts[idx];
+                    const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '-' : `${diff}`;
+                    const diffColor = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'opacity-30';
+                    const widthPercent = stats.totalClicks > 0 ? (count / stats.totalClicks) * 100 : 0;
 
-                        return (
-                          <div key={idx} className="flex items-center gap-3 w-full">
-                              <div 
-                                className="w-3 h-3 rounded-full shrink-0"
-                                style={{ backgroundColor: getColor(idx) }} 
-                              />
-                              <span className="text-sm w-16 truncate text-slate-600">{getLabel(idx)}</span>
-                              <div className="flex-grow h-2 rounded-full bg-gray-100 overflow-hidden">
-                                <div 
-                                  className="h-full rounded-full transition-all duration-500"
-                                  style={{ width: `${Math.max(widthPercent, 0)}%`, backgroundColor: getColor(idx) }}
-                                />
-                              </div>
-                              <div className="w-16 text-right text-xs flex flex-col items-end shrink-0">
-                                <span className="font-bold text-slate-700">{count}</span>
-                                <span className={`font-medium ${diffColor}`}>{diffStr}</span>
-                              </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* 2. 總計卡片 (移到下方) */}
-                  <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
-                    <div className="text-sm opacity-70 mb-4 text-slate-600">截至今日各分類總計</div>
-                    <div className="grid grid-cols-2 gap-4">
-                      {colors.map((color, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
+                    return (
+                      <div key={idx} className="flex items-center gap-3 w-full px-2">
                           <div 
                             className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: color.hex }}
+                            style={{ backgroundColor: getColor(idx) }} 
                           />
-                          <span className="text-xs opacity-80 w-12 truncate text-slate-600">{color.label}</span>
-                          <span className="text-lg font-bold text-slate-700">{stats.colorCounts[idx]}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
+                          <span className="text-sm w-16 truncate text-slate-600">{getLabel(idx)}</span>
+                          <div className="flex-grow h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${Math.max(widthPercent, 0)}%`, backgroundColor: getColor(idx) }}
+                            />
+                          </div>
+                          <div className="w-16 text-right text-xs flex flex-col items-end shrink-0">
+                            <span className="font-bold text-slate-700">{count}</span>
+                            <span className={`font-medium ${diffColor}`}>{diffStr}</span>
+                          </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. 總計長條圖 (移到下方，放在框內) */}
+              {/* pt-12 確保數字不被切 */}
+              <div className="w-full h-80 p-4 pt-12 rounded-lg shadow-sm flex items-end justify-around gap-2 border border-gray-200 bg-white overflow-visible">
+                  {colors.map((color, idx) => {
+                    const count = stats.colorCounts[idx];
+                    const heightPercent = count > 0 ? (count / maxCount) * 100 : 0;
+                    const displayHeight = Math.max(heightPercent, 2); 
+
+                    return (
+                      <div key={idx} className="flex flex-col items-center justify-end h-full w-1/6 group relative">
+                          <span className={`absolute -top-6 text-xs font-bold text-gray-500 transition-opacity duration-200 ${count > 0 ? 'opacity-100' : 'opacity-0'}`}>
+                            {count}
+                          </span>
+                          
+                          <div 
+                            className="w-full rounded-t-md transition-all duration-500 ease-out relative hover:opacity-80"
+                            style={{ 
+                              height: `${displayHeight}%`, 
+                              backgroundColor: color.hex,
+                              opacity: count > 0 ? 1 : 0.1
+                            }}
+                          />
+                          <span className="text-[10px] mt-2 truncate max-w-full opacity-70 border-t border-gray-100 w-full text-center pt-1">
+                            {color.label}
+                          </span>
+                      </div>
+                    )
+                  })}
+              </div>
             </div>
           )}
 
