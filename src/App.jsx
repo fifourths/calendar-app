@@ -6,9 +6,9 @@ import {
   Globe, AlertTriangle, Clock
 } from 'lucide-react';
 
-// --- 1. Constants & Config (Moved outside to prevent re-creation) ---
+// --- 1. Constants & Config ---
 
-// Built-in App Icon (The Grid Style)
+// Built-in App Icon (The Grid Style) - SVG Source
 const APP_ICON_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
@@ -136,7 +136,6 @@ const SettingsModal = ({
     }
   };
 
-  // Common Classes
   const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
   const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
   const buttonClass = isDark 
@@ -152,7 +151,6 @@ const SettingsModal = ({
     ? new Date(lastBackupDate).toLocaleDateString() + ' ' + new Date(lastBackupDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     : '尚未備份';
 
-  // Sub-view: Confirm Reset
   if (mode === 'confirm_reset') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
@@ -186,7 +184,6 @@ const SettingsModal = ({
     )
   }
 
-  // Main Settings View
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div 
@@ -261,6 +258,7 @@ const SettingsModal = ({
   );
 };
 
+// --- Note Row Component ---
 const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect, isDark }) => {
   const inputRef = useRef(null);
 
@@ -285,7 +283,7 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
          ref={inputRef}
          value={note.text}
          onChange={onChange}
-         // Clean Interaction: No touch handlers blocking focus
+         onTouchStart={(e) => !isReordering && e.stopPropagation()}
          className={`flex-1 text-sm bg-transparent border-b focus:ring-0 px-3 pb-2 transition-all outline-none 
             ${isDark ? 'text-slate-200 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-700 border-slate-200 focus:border-slate-400 placeholder:text-slate-300'} 
             ${isReordering ? 'pointer-events-none' : ''}`}
@@ -308,57 +306,65 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 };
 
 
-// --- 4. Main Application ---
+// --- Main Application ---
 
 export default function NewCalendarApp() {
-  // Core State
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appTitle, setAppTitle] = useState('My Life Log');
   const [gridMode, setGridMode] = useState(4); 
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
-  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [darkMode, setDarkMode] = useState(false);
-  const [lastBackupDate, setLastBackupDate] = useState(null);
   
-  // Data State
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  
   const [records, setRecords] = useState({});
   const [weekNotes, setWeekNotes] = useState({});
   const [allFooterNotes, setAllFooterNotes] = useState({});
   
-  // UI State
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
+  
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
 
-  // Swipe Refs
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
+  
+  // Backup Status
+  const [lastBackupDate, setLastBackupDate] = useState(null);
 
-  // --- Effects: Icon Injection ---
+  // --- FORCE ICON INJECTION (The Fix) ---
   useEffect(() => {
-    if (!document.querySelector("link[rel*='icon']")) {
+    const injectIcon = () => {
+        // Remove ANY existing icons first to prevent conflict
+        const existingIcons = document.querySelectorAll("link[rel*='icon']");
+        existingIcons.forEach(el => el.remove());
+
+        // Inject new standard icon
         const link = document.createElement('link');
         link.type = 'image/svg+xml';
         link.rel = 'icon';
         link.href = APP_ICON_URI;
         document.head.appendChild(link);
-    }
-    if (!document.querySelector("link[rel='apple-touch-icon']")) {
+
+        // Inject new apple touch icon
         const appleLink = document.createElement('link');
         appleLink.rel = 'apple-touch-icon';
         appleLink.href = APP_ICON_URI;
         document.head.appendChild(appleLink);
-    }
+    };
+    
+    injectIcon();
   }, []);
 
-  // --- Effects: Persistence ---
+  // Persistence: Local Storage
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v57_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v58_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -379,12 +385,12 @@ export default function NewCalendarApp() {
            if(ordered.length === categories.length) setCategories(ordered);
        }
     });
-    // Load Notes with Migration
-    const savedNewNotes = localStorage.getItem('calendar_app_v57_allFooterNotes');
+
+    const savedNewNotes = localStorage.getItem('calendar_app_v58_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v57_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v58_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -398,25 +404,27 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v57_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v57_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v57_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v57_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v57_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v57_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v57_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v57_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v57_lastBackupDate', JSON.stringify(lastBackupDate));
-    localStorage.setItem('calendar_app_v57_categoryOrder', JSON.stringify(categories.map(c => c.id)));
+    localStorage.setItem('calendar_app_v58_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v58_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v58_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v58_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v58_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v58_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v58_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v58_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v58_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v58_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
-  // --- Derived Values ---
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); 
   const monthKey = getMonthKey(year, month);
   const today = new Date();
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
+
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
+  
+  // Backup status calculation
   const isBackupOverdue = useMemo(() => {
       if (!lastBackupDate) return true; 
       const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
@@ -455,6 +463,7 @@ export default function NewCalendarApp() {
     const currentRecord = records[dateKey] || {};
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
+    
     if (currentColor === selectedColor) {
       delete newRecord[subIndex]; 
     } else {
@@ -550,6 +559,7 @@ export default function NewCalendarApp() {
 
   const handleItemSwap = (targetId, listType) => {
     if (!reorderMode || reorderMode !== listType) return;
+
     if (swapSourceId === null) {
       setSwapSourceId(targetId);
     } else if (swapSourceId === targetId) {
@@ -576,7 +586,7 @@ export default function NewCalendarApp() {
     }
   };
 
-  // --- Stats Calculation ---
+  // --- Stats Logic & Grid Construction ---
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month); 
@@ -605,7 +615,7 @@ export default function NewCalendarApp() {
 
     const calcCounts = (monthKeyFilter = null) => {
       const counts = {};
-      (categories || []).forEach(c => counts[c.id] = 0);
+      categories.forEach(c => counts[c.id] = 0);
       Object.keys(records).forEach(dateKey => {
         if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
         Object.values(records[dateKey]).forEach(colorId => {
@@ -616,7 +626,7 @@ export default function NewCalendarApp() {
     };
 
     const range = {}; 
-    (categories || []).forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
+    categories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
 
     Object.keys(records).forEach(dateKey => {
         const date = new Date(dateKey);
@@ -655,7 +665,24 @@ export default function NewCalendarApp() {
 
   return (
     <>
+    <style dangerouslySetInnerHTML={{__html: `
+      * { -webkit-tap-highlight-color: transparent; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      @media (hover: none) {
+        .hover\\:bg-opacity-80:hover { background-opacity: 1; }
+      }
+      .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both infinite; }
+      @keyframes shake {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(1deg); }
+        75% { transform: rotate(-1deg); }
+        100% { transform: rotate(0deg); }
+      }
+    `}} />
+
     <div className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}>
+      {/* Auto Height for Mobile Full View */}
       <div className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]
          ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}
       `}>
@@ -704,6 +731,7 @@ export default function NewCalendarApp() {
                    </h2>
                 </div>
                 
+                {/* Today Button */}
                 <button 
                   onClick={handleJumpToToday}
                   className={`flex items-center gap-1 pl-2 pr-3 py-1 rounded-full transition-colors ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-800'}`}
@@ -731,6 +759,7 @@ export default function NewCalendarApp() {
               
               <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none relative ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 <Settings size={18} />
+                {/* BACKUP REMINDER DOT */}
                 {isBackupOverdue && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm animate-pulse"></span>
                 )}
@@ -744,6 +773,7 @@ export default function NewCalendarApp() {
           
           {view === 'calendar' ? (
             <>
+              {/* SWIPE AREA */}
               <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
                   {/* Calendar Header */}
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
@@ -771,6 +801,7 @@ export default function NewCalendarApp() {
                             
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
+                               // Safety: Ensure category exists before lookup
                                const activeCatState = categories?.find(c => c.id === colorId);
                                const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
                                const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
@@ -788,6 +819,7 @@ export default function NewCalendarApp() {
                                       ${finalColor} hover:opacity-80
                                     `}
                                  >
+                                    {/* Increased Visibility Grid Lines */}
                                     <div className={`absolute inset-0 pointer-events-none 
                                        ${darkMode ? 'border-slate-600' : 'border-slate-300'}
                                        ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
@@ -855,7 +887,7 @@ export default function NewCalendarApp() {
                     </button>
                  </div>
                  <div className="grid grid-cols-3 gap-3">
-                    {(categories || []).map((cat) => {
+                    {categories.map((cat) => {
                       const style = COLOR_DEFINITIONS[cat.id];
                       return (
                       <div 
@@ -935,7 +967,7 @@ export default function NewCalendarApp() {
             // --- Statistics View ---
             <div className="h-full flex flex-col justify-start pt-4 pb-8 animate-in fade-in zoom-in duration-300 px-3">
                <div className="space-y-4">
-                 {(categories || []).map((cat) => {
+                 {categories.map((cat) => {
                     const current = stats.currentCounts[cat.id];
                     const prev = stats.prevCounts[cat.id];
                     const diff = current - prev;
@@ -963,7 +995,7 @@ export default function NewCalendarApp() {
                             <div className="flex flex-col items-end">
                                 <div className="flex items-baseline gap-2">
                                     <span className={`text-2xl font-bold leading-none ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
-                                    <span className={`text-[10px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>/ {stats.totalCounts[cat.id]}</span>
+                                    <span className={`text-[10px] text-slate-400 dark:text-slate-500 font-medium`}>/ {stats.totalCounts[cat.id]}</span>
                                 </div>
                                 <span className={`text-[8px] font-bold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                     Avg: {freqText}
