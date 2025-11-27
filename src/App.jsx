@@ -3,12 +3,12 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, Camera, Share2, Clock, AlertTriangle
+  Globe, AlertTriangle, Clock
 } from 'lucide-react';
 
-// --- Constants & Config ---
+// --- 1. Constants & Config (Moved outside to prevent re-creation) ---
 
-// Built-in App Icon (The Grid Style) - SVG Source
+// Built-in App Icon (The Grid Style)
 const APP_ICON_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
@@ -59,7 +59,7 @@ const DEFAULT_NOTES = [
 
 const BACKUP_REMINDER_DAYS = 7;
 
-// --- Helper Functions ---
+// --- 2. Helper Functions ---
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => {
@@ -73,7 +73,7 @@ const formatDateKey = (year, month, day) => {
 
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
-// --- Sub-Components ---
+// --- 3. Sub-Components ---
 
 const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark }) => {
   const [viewYear, setViewYear] = useState(currentYear);
@@ -147,18 +147,9 @@ const SettingsModal = ({
     ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
     : 'bg-red-50 hover:bg-red-100 text-red-600';
   
-  // FIX: Safe Date Formatting to prevent crash
-  let formattedLastBackup = '尚未備份';
-  try {
-      if (lastBackupDate) {
-          const date = new Date(lastBackupDate);
-          if (!isNaN(date.getTime())) {
-              formattedLastBackup = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-          }
-      }
-  } catch (e) {
-      formattedLastBackup = '時間格式錯誤';
-  }
+  const formattedLastBackup = lastBackupDate 
+    ? new Date(lastBackupDate).toLocaleDateString() + ' ' + new Date(lastBackupDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    : '尚未備份';
 
   if (mode === 'confirm_reset') {
     return (
@@ -203,10 +194,14 @@ const SettingsModal = ({
            <h3 className={`text-lg font-bold ${titleClass}`}>設定與資料</h3>
         </div>
         
-        {/* Backup Reminder Widget */}
-        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs ${isBackupOverdue ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-300' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'}`}>
+        {/* Backup Reminder Widget - Fixed Text Visibility */}
+        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs 
+            ${isBackupOverdue 
+              ? (isDark ? 'bg-red-900/20 text-red-400 ring-1 ring-red-900/50' : 'bg-red-50 text-red-600 ring-1 ring-red-200') 
+              : (isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500')}
+        `}>
              {isBackupOverdue ? <AlertTriangle size={14} /> : <Clock size={14} />}
-             <span>上次: {formattedLastBackup}</span>
+             <span className="font-medium">上次: {formattedLastBackup}</span>
         </div>
         
         <div className="space-y-3">
@@ -223,12 +218,12 @@ const SettingsModal = ({
 
           <button 
             onClick={onExport}
-            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue ? 'ring-1 ring-red-400 bg-red-50 dark:bg-red-900/20' : buttonClass}`}
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue ? (isDark ? 'ring-1 ring-red-400/50 bg-red-900/20 text-red-300' : 'ring-1 ring-red-400 bg-red-50 text-red-600') : buttonClass}`}
           >
             <div className={`p-2 rounded-xl group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm ${iconBgClass}`}>
-               <Download size={18} className={isBackupOverdue ? 'text-red-500' : ''} />
+               <Download size={18} className={isBackupOverdue ? (isDark ? 'text-red-400' : 'text-red-500') : ''} />
             </div>
-            <span className={`text-sm font-medium ${isBackupOverdue ? 'text-red-600 dark:text-red-300 font-bold' : ''}`}>
+            <span className={`text-sm font-medium ${isBackupOverdue ? 'font-bold' : ''}`}>
                 {isBackupOverdue ? '建議立即匯出備份' : '匯出資料備份'}
             </span>
           </button>
@@ -398,7 +393,7 @@ export default function NewCalendarApp() {
   // Persistence: Local Storage
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v59_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v61_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -420,11 +415,11 @@ export default function NewCalendarApp() {
        }
     });
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v59_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v61_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v59_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v61_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -438,16 +433,16 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v59_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v59_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v59_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v59_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v59_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v59_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v59_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v59_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v59_lastBackupDate', JSON.stringify(lastBackupDate));
-    localStorage.setItem('calendar_app_v59_categoryOrder', JSON.stringify(categories.map(c => c.id)));
+    localStorage.setItem('calendar_app_v61_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v61_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v61_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v61_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v61_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v61_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v61_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v61_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v61_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v61_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
