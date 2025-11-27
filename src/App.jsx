@@ -3,29 +3,29 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe
+  Globe, Camera, Share2
 } from 'lucide-react';
 
 // --- Constants & Config ---
 
-// The Grid Icon SVG (Data URI)
-// Design: White squircle background with 3x3 colored dots matching the app theme
+// NEW: Built-in App Icon (The Grid Style)
+// This SVG creates a squircle icon with colorful dots matching the app theme
 const APP_ICON_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect x="0" y="0" width="512" height="512" rx="115" ry="115" fill="#ffffff"/>
-  <circle cx="128" cy="128" r="48" fill="#fca5a5"/> 
-  <circle cx="256" cy="128" r="48" fill="#fdba74"/> 
-  <circle cx="384" cy="128" r="48" fill="#fde047"/> 
-  <circle cx="128" cy="256" r="48" fill="#6ee7b7"/> 
-  <circle cx="256" cy="256" r="48" fill="#93c5fd"/> 
-  <circle cx="384" cy="256" r="48" fill="#d8b4fe"/> 
-  <circle cx="128" cy="384" r="48" fill="#f1f5f9"/> 
-  <circle cx="256" cy="384" r="48" fill="#f1f5f9"/> 
-  <circle cx="384" cy="384" r="48" fill="#f1f5f9"/> 
+  <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
+  <circle cx="128" cy="128" r="56" fill="#fca5a5"/> 
+  <circle cx="256" cy="128" r="56" fill="#fdba74"/> 
+  <circle cx="384" cy="128" r="56" fill="#fde047"/> 
+  <circle cx="128" cy="256" r="56" fill="#6ee7b7"/> 
+  <circle cx="256" cy="256" r="56" fill="#93c5fd"/> 
+  <circle cx="384" cy="256" r="56" fill="#d8b4fe"/> 
+  <circle cx="128" cy="384" r="56" fill="#f1f5f9"/> 
+  <circle cx="256" cy="384" r="56" fill="#f1f5f9"/> 
+  <circle cx="384" cy="384" r="56" fill="#f1f5f9"/> 
 </svg>
-`.trim().replace(/\n/g, '');
+`.trim();
 
-const APP_ICON_URI = `data:image/svg+xml,${encodeURIComponent(APP_ICON_SVG)}`;
+const APP_ICON_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(APP_ICON_SVG)}`;
 
 // Static definitions for colors to support robust dark mode switching
 const COLOR_DEFINITIONS = {
@@ -298,7 +298,6 @@ export default function NewCalendarApp() {
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
   
-  // FIXED: categories is now state again to allow reorder/update
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -318,29 +317,28 @@ export default function NewCalendarApp() {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
-  // --- AUTO-INJECT FAVICON ---
+  // --- AUTO-INJECT ICON ON MOUNT ---
   useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.type = 'image/svg+xml';
-    link.href = APP_ICON_URI;
-    document.head.appendChild(link);
-
-    const appleLink = document.createElement('link');
-    appleLink.rel = 'apple-touch-icon';
-    appleLink.href = APP_ICON_URI;
-    document.head.appendChild(appleLink);
-
-    return () => {
-      document.head.removeChild(link);
-      document.head.removeChild(appleLink);
-    };
+    // Check if link already exists to avoid duplicates
+    if (!document.querySelector("link[rel*='icon']")) {
+        const link = document.createElement('link');
+        link.type = 'image/svg+xml';
+        link.rel = 'icon';
+        link.href = APP_ICON_URI;
+        document.head.appendChild(link);
+    }
+    if (!document.querySelector("link[rel='apple-touch-icon']")) {
+        const appleLink = document.createElement('link');
+        appleLink.rel = 'apple-touch-icon';
+        appleLink.href = APP_ICON_URI;
+        document.head.appendChild(appleLink);
+    }
   }, []);
 
   // Persistence: Local Storage
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v52_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v51_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -354,19 +352,12 @@ export default function NewCalendarApp() {
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
-    load('categoryOrder', (order) => {
-       // Restore category order if saved
-       if(order && Array.isArray(order)) {
-           const ordered = order.map(id => categories.find(c => c.id === id)).filter(Boolean);
-           if(ordered.length === categories.length) setCategories(ordered);
-       }
-    });
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v52_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v51_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v52_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v51_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -380,15 +371,14 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v52_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v52_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v52_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v52_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v52_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v52_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v52_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v52_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v52_categoryOrder', JSON.stringify(categories.map(c => c.id)));
+    localStorage.setItem('calendar_app_v51_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v51_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v51_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v51_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v51_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v51_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v51_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v51_darkMode', JSON.stringify(darkMode));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode]);
 
   const year = currentDate.getFullYear();
@@ -759,8 +749,7 @@ export default function NewCalendarApp() {
                             
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
-                               // Safety: Ensure category exists before lookup
-                               const activeCatState = categories?.find(c => c.id === colorId);
+                               const activeCatState = categories.find(c => c.id === colorId);
                                const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
                                const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
 
@@ -777,6 +766,7 @@ export default function NewCalendarApp() {
                                       ${finalColor} hover:opacity-80
                                     `}
                                  >
+                                    {/* Increased Visibility Grid Lines */}
                                     <div className={`absolute inset-0 pointer-events-none 
                                        ${darkMode ? 'border-slate-600' : 'border-slate-300'}
                                        ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
