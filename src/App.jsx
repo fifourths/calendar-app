@@ -3,10 +3,10 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock
+  Globe, Camera, Share2, Clock, AlertTriangle
 } from 'lucide-react';
 
-// --- 1. Constants & Config ---
+// --- Constants & Config ---
 
 // Built-in App Icon (The Grid Style) - SVG Source
 const APP_ICON_SVG = `
@@ -28,12 +28,12 @@ const APP_ICON_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(APP_
 
 // Robust Dark Mode Color Definitions
 const COLOR_DEFINITIONS = {
-  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', tw: 'bg-red-300',    darkTw: 'dark:bg-red-400/80' },
-  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', tw: 'bg-orange-300', darkTw: 'dark:bg-orange-400/80' },
-  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', tw: 'bg-yellow-300', darkTw: 'dark:bg-yellow-400/80' },
-  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', tw: 'bg-emerald-300', darkTw: 'dark:bg-emerald-400/80' },
-  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   tw: 'bg-blue-300',   darkTw: 'dark:bg-blue-400/80' },
-  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', tw: 'bg-purple-300', darkTw: 'dark:bg-purple-400/80' },
+  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
+  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', borderLight: 'border-orange-300', borderDark: 'border-orange-500/50', textLight: 'text-orange-500', textDark: 'text-orange-300' },
+  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', borderLight: 'border-yellow-300', borderDark: 'border-yellow-500/50', textLight: 'text-yellow-600', textDark: 'text-yellow-300' },
+  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', borderLight: 'border-emerald-300', borderDark: 'border-emerald-500/50', textLight: 'text-emerald-500', textDark: 'text-emerald-300' },
+  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   borderLight: 'border-blue-300',   borderDark: 'border-blue-500/50',   textLight: 'text-blue-500',   textDark: 'text-blue-300' },
+  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', borderLight: 'border-purple-300', borderDark: 'border-purple-500/50', textLight: 'text-purple-500', textDark: 'text-purple-300' },
 };
 
 const INITIAL_CATEGORIES = [
@@ -59,7 +59,7 @@ const DEFAULT_NOTES = [
 
 const BACKUP_REMINDER_DAYS = 7;
 
-// --- 2. Helper Functions ---
+// --- Helper Functions ---
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => {
@@ -73,7 +73,7 @@ const formatDateKey = (year, month, day) => {
 
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
-// --- 3. Sub-Components ---
+// --- Sub-Components ---
 
 const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark }) => {
   const [viewYear, setViewYear] = useState(currentYear);
@@ -147,9 +147,18 @@ const SettingsModal = ({
     ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
     : 'bg-red-50 hover:bg-red-100 text-red-600';
   
-  const formattedLastBackup = lastBackupDate 
-    ? new Date(lastBackupDate).toLocaleDateString() + ' ' + new Date(lastBackupDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    : '尚未備份';
+  // FIX: Safe Date Formatting to prevent crash
+  let formattedLastBackup = '尚未備份';
+  try {
+      if (lastBackupDate) {
+          const date = new Date(lastBackupDate);
+          if (!isNaN(date.getTime())) {
+              formattedLastBackup = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+          }
+      }
+  } catch (e) {
+      formattedLastBackup = '時間格式錯誤';
+  }
 
   if (mode === 'confirm_reset') {
     return (
@@ -315,6 +324,7 @@ export default function NewCalendarApp() {
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
   
+  // FIXED: categories is now state again to allow reorder/update
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -337,34 +347,58 @@ export default function NewCalendarApp() {
   // Backup Status
   const [lastBackupDate, setLastBackupDate] = useState(null);
 
-  // --- FORCE ICON INJECTION (The Fix) ---
+  // --- AUTO-INJECT ICON ON MOUNT ---
   useEffect(() => {
     const injectIcon = () => {
-        // Remove ANY existing icons first to prevent conflict
         const existingIcons = document.querySelectorAll("link[rel*='icon']");
         existingIcons.forEach(el => el.remove());
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 180;
+        canvas.height = 180;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 180, 180);
+        const dotColors = [
+            '#fca5a5', '#fdba74', '#fde047', 
+            '#6ee7b7', '#93c5fd', '#d8b4fe', 
+            '#f1f5f9', '#f1f5f9', '#f1f5f9'
+        ];
+        const radius = 20;
+        const gap = 45;
+        const startX = 45;
+        const startY = 45;
+        dotColors.forEach((color, i) => {
+            const row = Math.floor(i / 3);
+            const col = i % 3;
+            const x = startX + col * gap;
+            const y = startY + row * gap;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+        const iconUrl = canvas.toDataURL('image/png');
 
-        // Inject new standard icon
         const link = document.createElement('link');
-        link.type = 'image/svg+xml';
+        link.type = 'image/png';
         link.rel = 'icon';
-        link.href = APP_ICON_URI;
+        link.href = iconUrl;
         document.head.appendChild(link);
 
-        // Inject new apple touch icon
         const appleLink = document.createElement('link');
         appleLink.rel = 'apple-touch-icon';
-        appleLink.href = APP_ICON_URI;
+        appleLink.href = iconUrl;
         document.head.appendChild(appleLink);
     };
-    
-    injectIcon();
+    // Delay injection slightly to ensure clean state
+    setTimeout(injectIcon, 500);
   }, []);
 
   // Persistence: Local Storage
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v58_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v59_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -386,11 +420,11 @@ export default function NewCalendarApp() {
        }
     });
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v58_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v59_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v58_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v59_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -404,16 +438,16 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v58_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v58_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v58_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v58_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v58_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v58_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v58_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v58_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v58_lastBackupDate', JSON.stringify(lastBackupDate));
-    localStorage.setItem('calendar_app_v58_categoryOrder', JSON.stringify(categories.map(c => c.id)));
+    localStorage.setItem('calendar_app_v59_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v59_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v59_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v59_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v59_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v59_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v59_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v59_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v59_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v59_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
@@ -423,14 +457,6 @@ export default function NewCalendarApp() {
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
 
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
-  
-  // Backup status calculation
-  const isBackupOverdue = useMemo(() => {
-      if (!lastBackupDate) return true; 
-      const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      return diffDays > BACKUP_REMINDER_DAYS;
-  }, [lastBackupDate]);
 
   // --- Handlers ---
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -505,7 +531,8 @@ export default function NewCalendarApp() {
 
   const handleExportData = () => {
     const now = new Date().toISOString();
-    setLastBackupDate(now);
+    setLastBackupDate(now); // Update backup time
+    
     const data = {
       appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex,
       exportedAt: now
@@ -538,7 +565,8 @@ export default function NewCalendarApp() {
             setAllFooterNotes({ [importKey]: data.footerNotes });
         }
         if (data.langIndex !== undefined) setLangIndex(data.langIndex);
-        setLastBackupDate(new Date().toISOString());
+        
+        setLastBackupDate(new Date().toISOString()); // Treat import as a fresh start
         setShowSettings(false);
       } catch (error) {
         setShowSettings(false);
@@ -586,6 +614,14 @@ export default function NewCalendarApp() {
     }
   };
 
+  // --- Check Backup Status ---
+  const isBackupOverdue = useMemo(() => {
+      if (!lastBackupDate) return true; 
+      const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      return diffDays > BACKUP_REMINDER_DAYS;
+  }, [lastBackupDate]);
+
   // --- Stats Logic & Grid Construction ---
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(year, month);
@@ -596,6 +632,7 @@ export default function NewCalendarApp() {
       days.push({ type: 'current', day: i, dateKey: formatDateKey(year, month, i) });
     }
     const totalCells = days.length;
+    // Auto height
     const nextMonthNeeded = (Math.ceil(totalCells / 7) * 7) - totalCells;
     for (let i = 1; i <= nextMonthNeeded; i++) {
        days.push({ type: 'next', day: i, dateKey: formatDateKey(year, month + 1, i) });
@@ -985,6 +1022,14 @@ export default function NewCalendarApp() {
                         freqText = `${avg.toFixed(1)} / m`;
                     }
 
+                    // Determine color class for diff text
+                    let diffColorClass = darkMode ? 'text-slate-500' : 'text-slate-400'; // Default neutral
+                    if (diff > 0) {
+                        diffColorClass = darkMode ? 'text-emerald-400' : 'text-emerald-600';
+                    } else if (diff < 0) {
+                        diffColorClass = darkMode ? 'text-red-400' : 'text-red-600';
+                    }
+
                     return (
                       <div key={cat.id} className="w-full">
                          <div className="flex justify-between items-end mb-1.5">
@@ -1011,7 +1056,7 @@ export default function NewCalendarApp() {
                          </div>
 
                          <div className="mt-1 flex justify-end">
-                            <span className={`text-[9px] font-bold ${diff >= 0 ? (darkMode ? 'text-slate-400' : 'text-slate-500') : (darkMode ? 'text-slate-500' : 'text-slate-400')}`}>
+                            <span className={`text-[9px] font-bold ${diffColorClass}`}>
                                {diff >= 0 ? '+' : ''}{diff} <span className={`font-normal ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>vs last month</span>
                             </span>
                          </div>
