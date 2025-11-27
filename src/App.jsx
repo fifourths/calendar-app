@@ -3,19 +3,37 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, Camera, Share2
+  Globe, AlertTriangle, Clock
 } from 'lucide-react';
 
-// --- Constants & Config ---
+// --- 1. Constants & Config (Moved outside to prevent re-creation) ---
 
-// Static definitions for colors to support robust dark mode switching
+// Built-in App Icon (The Grid Style)
+const APP_ICON_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
+  <circle cx="128" cy="128" r="56" fill="#fca5a5"/> 
+  <circle cx="256" cy="128" r="56" fill="#fdba74"/> 
+  <circle cx="384" cy="128" r="56" fill="#fde047"/> 
+  <circle cx="128" cy="256" r="56" fill="#6ee7b7"/> 
+  <circle cx="256" cy="256" r="56" fill="#93c5fd"/> 
+  <circle cx="384" cy="256" r="56" fill="#d8b4fe"/> 
+  <circle cx="128" cy="384" r="56" fill="#f1f5f9"/> 
+  <circle cx="256" cy="384" r="56" fill="#f1f5f9"/> 
+  <circle cx="384" cy="384" r="56" fill="#f1f5f9"/> 
+</svg>
+`.trim();
+
+const APP_ICON_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(APP_ICON_SVG)}`;
+
+// Robust Dark Mode Color Definitions
 const COLOR_DEFINITIONS = {
-  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
-  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', borderLight: 'border-orange-300', borderDark: 'border-orange-500/50', textLight: 'text-orange-500', textDark: 'text-orange-300' },
-  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', borderLight: 'border-yellow-300', borderDark: 'border-yellow-500/50', textLight: 'text-yellow-600', textDark: 'text-yellow-300' },
-  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', borderLight: 'border-emerald-300', borderDark: 'border-emerald-500/50', textLight: 'text-emerald-500', textDark: 'text-emerald-300' },
-  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   borderLight: 'border-blue-300',   borderDark: 'border-blue-500/50',   textLight: 'text-blue-500',   textDark: 'text-blue-300' },
-  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', borderLight: 'border-purple-300', borderDark: 'border-purple-500/50', textLight: 'text-purple-500', textDark: 'text-purple-300' },
+  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', tw: 'bg-red-300',    darkTw: 'dark:bg-red-400/80' },
+  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', tw: 'bg-orange-300', darkTw: 'dark:bg-orange-400/80' },
+  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', tw: 'bg-yellow-300', darkTw: 'dark:bg-yellow-400/80' },
+  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', tw: 'bg-emerald-300', darkTw: 'dark:bg-emerald-400/80' },
+  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   tw: 'bg-blue-300',   darkTw: 'dark:bg-blue-400/80' },
+  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', tw: 'bg-purple-300', darkTw: 'dark:bg-purple-400/80' },
 };
 
 const INITIAL_CATEGORIES = [
@@ -39,7 +57,9 @@ const DEFAULT_NOTES = [
   { id: 'def-2', text: '' },
 ];
 
-// --- Helper Functions ---
+const BACKUP_REMINDER_DAYS = 7;
+
+// --- 2. Helper Functions ---
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => {
@@ -53,7 +73,7 @@ const formatDateKey = (year, month, day) => {
 
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
-// --- Sub-Components ---
+// --- 3. Sub-Components ---
 
 const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark }) => {
   const [viewYear, setViewYear] = useState(currentYear);
@@ -103,7 +123,9 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
   );
 };
 
-const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, currentLang, isDark }) => {
+const SettingsModal = ({ 
+  onClose, onReset, onExport, onImport, toggleLanguage, currentLang, isDark, lastBackupDate, isBackupOverdue 
+}) => {
   const fileInputRef = useRef(null);
   const [mode, setMode] = useState('menu'); 
 
@@ -114,6 +136,7 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
     }
   };
 
+  // Common Classes
   const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
   const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
   const buttonClass = isDark 
@@ -124,7 +147,12 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
   const dangerClass = isDark 
     ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
     : 'bg-red-50 hover:bg-red-100 text-red-600';
+  
+  const formattedLastBackup = lastBackupDate 
+    ? new Date(lastBackupDate).toLocaleDateString() + ' ' + new Date(lastBackupDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    : '尚未備份';
 
+  // Sub-view: Confirm Reset
   if (mode === 'confirm_reset') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
@@ -158,13 +186,22 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
     )
   }
 
+  // Main Settings View
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} 
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className={`text-lg font-bold mb-6 px-1 ${titleClass}`}>設定與資料</h3>
+        <div className="flex justify-between items-center mb-6 px-1">
+           <h3 className={`text-lg font-bold ${titleClass}`}>設定與資料</h3>
+        </div>
+        
+        {/* Backup Reminder Widget */}
+        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs ${isBackupOverdue ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-300' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'}`}>
+             {isBackupOverdue ? <AlertTriangle size={14} /> : <Clock size={14} />}
+             <span>上次: {formattedLastBackup}</span>
+        </div>
         
         <div className="space-y-3">
           <button 
@@ -180,12 +217,14 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
 
           <button 
             onClick={onExport}
-            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue ? 'ring-1 ring-red-400 bg-red-50 dark:bg-red-900/20' : buttonClass}`}
           >
             <div className={`p-2 rounded-xl group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm ${iconBgClass}`}>
-               <Download size={18} />
+               <Download size={18} className={isBackupOverdue ? 'text-red-500' : ''} />
             </div>
-            <span className="text-sm font-medium">匯出資料備份</span>
+            <span className={`text-sm font-medium ${isBackupOverdue ? 'text-red-600 dark:text-red-300 font-bold' : ''}`}>
+                {isBackupOverdue ? '建議立即匯出備份' : '匯出資料備份'}
+            </span>
           </button>
 
           <button 
@@ -222,7 +261,6 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
   );
 };
 
-// --- Note Row Component ---
 const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect, isDark }) => {
   const inputRef = useRef(null);
 
@@ -247,7 +285,7 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
          ref={inputRef}
          value={note.text}
          onChange={onChange}
-         onTouchStart={(e) => !isReordering && e.stopPropagation()}
+         // Clean Interaction: No touch handlers blocking focus
          className={`flex-1 text-sm bg-transparent border-b focus:ring-0 px-3 pb-2 transition-all outline-none 
             ${isDark ? 'text-slate-200 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-700 border-slate-200 focus:border-slate-400 placeholder:text-slate-300'} 
             ${isReordering ? 'pointer-events-none' : ''}`}
@@ -270,104 +308,57 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 };
 
 
-// --- Main Application ---
+// --- 4. Main Application ---
 
 export default function NewCalendarApp() {
+  // Core State
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appTitle, setAppTitle] = useState('My Life Log');
   const [gridMode, setGridMode] = useState(4); 
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
-  
-  // FIXED: categories is now state again to allow reorder/update
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [lastBackupDate, setLastBackupDate] = useState(null);
   
+  // Data State
   const [records, setRecords] = useState({});
   const [weekNotes, setWeekNotes] = useState({});
   const [allFooterNotes, setAllFooterNotes] = useState({});
   
+  // UI State
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
-  
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
 
+  // Swipe Refs
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
-  // --- AUTO-GENERATE PNG ICON VIA CANVAS ---
-  // This forces a real image instead of a code snippet, better for iOS
+  // --- Effects: Icon Injection ---
   useEffect(() => {
-    const generateIcon = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-
-        // Background - White Square
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Colors matching the App
-        const dotColors = [
-            '#fca5a5', '#fdba74', '#fde047', // Red, Orange, Yellow
-            '#6ee7b7', '#93c5fd', '#d8b4fe', // Green, Blue, Purple
-            '#f1f5f9', '#f1f5f9', '#f1f5f9'  // Gray Placeholders
-        ];
-
-        // Draw 3x3 Grid of Dots
-        const radius = 56;
-        const gap = 128;
-        const startX = 128;
-        const startY = 128;
-
-        dotColors.forEach((color, i) => {
-            const row = Math.floor(i / 3);
-            const col = i % 3;
-            const x = startX + col * gap;
-            const y = startY + row * gap;
-            
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
-            ctx.fillStyle = color;
-            ctx.fill();
-        });
-
-        return canvas.toDataURL('image/png');
-    };
-
-    const iconUrl = generateIcon();
-
-    // Inject into Head
-    // 1. Standard Icon
-    let link = document.querySelector("link[rel*='icon']");
-    if (!link) {
-        link = document.createElement('link');
+    if (!document.querySelector("link[rel*='icon']")) {
+        const link = document.createElement('link');
+        link.type = 'image/svg+xml';
         link.rel = 'icon';
+        link.href = APP_ICON_URI;
         document.head.appendChild(link);
     }
-    link.type = 'image/png';
-    link.href = iconUrl;
-
-    // 2. Apple Touch Icon
-    let appleLink = document.querySelector("link[rel='apple-touch-icon']");
-    if (!appleLink) {
-        appleLink = document.createElement('link');
+    if (!document.querySelector("link[rel='apple-touch-icon']")) {
+        const appleLink = document.createElement('link');
         appleLink.rel = 'apple-touch-icon';
+        appleLink.href = APP_ICON_URI;
         document.head.appendChild(appleLink);
     }
-    appleLink.href = iconUrl;
-    
   }, []);
 
-  // Persistence: Local Storage
+  // --- Effects: Persistence ---
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v54_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v57_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -381,12 +372,19 @@ export default function NewCalendarApp() {
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
-
-    const savedNewNotes = localStorage.getItem('calendar_app_v54_allFooterNotes');
+    load('lastBackupDate', setLastBackupDate, null);
+    load('categoryOrder', (order) => {
+       if(order && Array.isArray(order)) {
+           const ordered = order.map(id => categories.find(c => c.id === id)).filter(Boolean);
+           if(ordered.length === categories.length) setCategories(ordered);
+       }
+    });
+    // Load Notes with Migration
+    const savedNewNotes = localStorage.getItem('calendar_app_v57_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v54_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v57_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -400,23 +398,31 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v54_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v54_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v54_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v54_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v54_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v54_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v54_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v54_darkMode', JSON.stringify(darkMode));
-  }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode]);
+    localStorage.setItem('calendar_app_v57_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v57_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v57_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v57_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v57_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v57_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v57_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v57_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v57_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v57_categoryOrder', JSON.stringify(categories.map(c => c.id)));
+  }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
+  // --- Derived Values ---
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); 
   const monthKey = getMonthKey(year, month);
   const today = new Date();
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
+  const isBackupOverdue = useMemo(() => {
+      if (!lastBackupDate) return true; 
+      const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      return diffDays > BACKUP_REMINDER_DAYS;
+  }, [lastBackupDate]);
 
   // --- Handlers ---
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -449,7 +455,6 @@ export default function NewCalendarApp() {
     const currentRecord = records[dateKey] || {};
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
-    
     if (currentColor === selectedColor) {
       delete newRecord[subIndex]; 
     } else {
@@ -490,15 +495,17 @@ export default function NewCalendarApp() {
   };
 
   const handleExportData = () => {
+    const now = new Date().toISOString();
+    setLastBackupDate(now);
     const data = {
       appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex,
-      exportedAt: new Date().toISOString()
+      exportedAt: now
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `calendar_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `calendar_backup_${now.slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -522,6 +529,7 @@ export default function NewCalendarApp() {
             setAllFooterNotes({ [importKey]: data.footerNotes });
         }
         if (data.langIndex !== undefined) setLangIndex(data.langIndex);
+        setLastBackupDate(new Date().toISOString());
         setShowSettings(false);
       } catch (error) {
         setShowSettings(false);
@@ -542,7 +550,6 @@ export default function NewCalendarApp() {
 
   const handleItemSwap = (targetId, listType) => {
     if (!reorderMode || reorderMode !== listType) return;
-
     if (swapSourceId === null) {
       setSwapSourceId(targetId);
     } else if (swapSourceId === targetId) {
@@ -569,7 +576,7 @@ export default function NewCalendarApp() {
     }
   };
 
-  // --- Stats Logic & Grid Construction ---
+  // --- Stats Calculation ---
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month); 
@@ -598,7 +605,7 @@ export default function NewCalendarApp() {
 
     const calcCounts = (monthKeyFilter = null) => {
       const counts = {};
-      categories.forEach(c => counts[c.id] = 0);
+      (categories || []).forEach(c => counts[c.id] = 0);
       Object.keys(records).forEach(dateKey => {
         if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
         Object.values(records[dateKey]).forEach(colorId => {
@@ -609,7 +616,7 @@ export default function NewCalendarApp() {
     };
 
     const range = {}; 
-    categories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
+    (categories || []).forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
 
     Object.keys(records).forEach(dateKey => {
         const date = new Date(dateKey);
@@ -648,24 +655,7 @@ export default function NewCalendarApp() {
 
   return (
     <>
-    <style dangerouslySetInnerHTML={{__html: `
-      * { -webkit-tap-highlight-color: transparent; }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      @media (hover: none) {
-        .hover\\:bg-opacity-80:hover { background-opacity: 1; }
-      }
-      .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both infinite; }
-      @keyframes shake {
-        0% { transform: rotate(0deg); }
-        25% { transform: rotate(1deg); }
-        75% { transform: rotate(-1deg); }
-        100% { transform: rotate(0deg); }
-      }
-    `}} />
-
     <div className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}>
-      {/* Auto Height for Mobile Full View */}
       <div className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]
          ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}
       `}>
@@ -681,6 +671,8 @@ export default function NewCalendarApp() {
                 toggleLanguage={toggleLanguage}
                 currentLang={langKey.toUpperCase()}
                 isDark={darkMode}
+                lastBackupDate={lastBackupDate}
+                isBackupOverdue={isBackupOverdue}
             />
         )}
         
@@ -712,7 +704,6 @@ export default function NewCalendarApp() {
                    </h2>
                 </div>
                 
-                {/* Today Button */}
                 <button 
                   onClick={handleJumpToToday}
                   className={`flex items-center gap-1 pl-2 pr-3 py-1 rounded-full transition-colors ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-800'}`}
@@ -738,8 +729,11 @@ export default function NewCalendarApp() {
                 <BarChart2 size={18} />
               </button>
               
-              <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
+              <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none relative ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 <Settings size={18} />
+                {isBackupOverdue && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm animate-pulse"></span>
+                )}
               </button>
             </div>
           </div>
@@ -750,7 +744,6 @@ export default function NewCalendarApp() {
           
           {view === 'calendar' ? (
             <>
-              {/* SWIPE AREA */}
               <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
                   {/* Calendar Header */}
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
@@ -778,7 +771,6 @@ export default function NewCalendarApp() {
                             
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
-                               // Safety: Ensure category exists before lookup
                                const activeCatState = categories?.find(c => c.id === colorId);
                                const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
                                const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
@@ -796,7 +788,6 @@ export default function NewCalendarApp() {
                                       ${finalColor} hover:opacity-80
                                     `}
                                  >
-                                    {/* Increased Visibility Grid Lines */}
                                     <div className={`absolute inset-0 pointer-events-none 
                                        ${darkMode ? 'border-slate-600' : 'border-slate-300'}
                                        ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
@@ -864,7 +855,7 @@ export default function NewCalendarApp() {
                     </button>
                  </div>
                  <div className="grid grid-cols-3 gap-3">
-                    {categories.map((cat) => {
+                    {(categories || []).map((cat) => {
                       const style = COLOR_DEFINITIONS[cat.id];
                       return (
                       <div 
@@ -944,7 +935,7 @@ export default function NewCalendarApp() {
             // --- Statistics View ---
             <div className="h-full flex flex-col justify-start pt-4 pb-8 animate-in fade-in zoom-in duration-300 px-3">
                <div className="space-y-4">
-                 {categories.map((cat) => {
+                 {(categories || []).map((cat) => {
                     const current = stats.currentCounts[cat.id];
                     const prev = stats.prevCounts[cat.id];
                     const diff = current - prev;
@@ -972,7 +963,7 @@ export default function NewCalendarApp() {
                             <div className="flex flex-col items-end">
                                 <div className="flex items-baseline gap-2">
                                     <span className={`text-2xl font-bold leading-none ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
-                                    <span className={`text-[10px] text-slate-400 dark:text-slate-500 font-medium`}>/ {stats.totalCounts[cat.id]}</span>
+                                    <span className={`text-[10px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>/ {stats.totalCounts[cat.id]}</span>
                                 </div>
                                 <span className={`text-[8px] font-bold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                     Avg: {freqText}
