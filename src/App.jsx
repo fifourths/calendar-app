@@ -295,7 +295,8 @@ export default function CalendarApp() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleSwipe}
     >
-      <div className="max-w-md w-full mx-auto min-h-screen flex flex-col p-2 relative">
+      {/* 最外層容器：確保滿版，移除內距 p-2 改為 px-1 或更小 */}
+      <div className="w-full min-h-screen flex flex-col p-1 relative">
         
         {/* 標題與導航區 */}
         <div className="flex justify-between items-start mb-2 w-full px-1">
@@ -343,7 +344,7 @@ export default function CalendarApp() {
           </div>
         </div>
 
-        {/* 主要內容區 */}
+        {/* 主要內容區 - 確保 w-full */}
         <div className="flex-grow flex flex-col w-full">
           
           {viewMode === 'calendar' ? (
@@ -440,7 +441,7 @@ export default function CalendarApp() {
               </div>
 
               {/* 顏色選擇區 (3欄，置中) */}
-              <div className="mt-4 flex justify-center w-full">
+              <div className="mt-4 animate-fade-in flex-1 flex justify-center w-full">
                  <div className="grid grid-cols-3 gap-x-6 gap-y-3 mb-2 w-fit mx-auto">
                     {colors.map((color, idx) => (
                       <div key={color.id} className="flex items-center justify-center gap-2">
@@ -469,34 +470,20 @@ export default function CalendarApp() {
             /* ================= 統計模式 ================= */
             <div className="flex flex-col w-full gap-4 animate-fade-in">
               
+              {/* 標題佔位符，保持頂部對齊 */}
+              <div className="h-[1.5rem] w-full"></div>
+
               {stats.totalClicks === 0 ? (
-                // --- 空狀態 ---
-                <div className="flex flex-col items-center justify-center py-20 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
+                // --- 空狀態 (Full Width) ---
+                <div className="flex flex-col items-center justify-center h-96 opacity-50 border rounded-xl border-dashed border-gray-300 bg-white w-full">
                   <BarChart2 size={48} className="mb-4 text-gray-300" />
                   <p className="text-sm text-gray-500">尚無紀錄資料</p>
                   <p className="text-xs mt-1 text-gray-400">請切換回月曆點擊日期進行紀錄</p>
                 </div>
               ) : (
-                // --- 有資料時 ---
+                // --- 統計圖表 (Full Width) ---
                 <>
-                  {/* 1. 總計卡片 (全寬) */}
-                  <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
-                    <div className="text-sm opacity-70 mb-4 text-slate-600">截至今日各分類總計</div>
-                    <div className="grid grid-cols-2 gap-4">
-                      {colors.map((color, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: color.hex }}
-                          />
-                          <span className="text-xs opacity-80 w-12 truncate text-slate-600">{color.label}</span>
-                          <span className="text-lg font-bold text-slate-700">{stats.colorCounts[idx]}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 2. 本月分佈列表 (全寬) */}
+                  {/* 1. 本月分佈列表 (移到上方) */}
                   <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
                     <h3 className="text-md font-semibold mb-4 flex justify-between text-slate-700">
                       <span>本月分佈 ({month + 1}月)</span>
@@ -504,9 +491,6 @@ export default function CalendarApp() {
                     </h3>
                     <div className="space-y-4">
                       {stats.monthlyCounts.map((count, idx) => {
-                        // 隱藏無數據的項目
-                        if (count === 0 && stats.colorCounts[idx] === 0) return null;
-
                         const diff = count - stats.lastMonthCounts[idx];
                         const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '-' : `${diff}`;
                         const diffColor = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'opacity-30';
@@ -532,6 +516,23 @@ export default function CalendarApp() {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* 2. 總計卡片 (移到下方) */}
+                  <div className="w-full p-4 rounded-xl shadow-sm border border-gray-100 bg-white">
+                    <div className="text-sm opacity-70 mb-4 text-slate-600">截至今日各分類總計</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {colors.map((color, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          <span className="text-xs opacity-80 w-12 truncate text-slate-600">{color.label}</span>
+                          <span className="text-lg font-bold text-slate-700">{stats.colorCounts[idx]}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </>
