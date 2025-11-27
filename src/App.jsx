@@ -8,13 +8,24 @@ import {
 
 // --- Constants & Config ---
 
-const INITIAL_COLORS = [
-  { id: 'red',    tw: 'bg-red-300',    darkTw: 'dark:bg-red-400/80', border: 'border-red-300 dark:border-red-500/50',    text: 'text-red-500 dark:text-red-300',    defaultLabel: '重要' },
-  { id: 'orange', tw: 'bg-orange-300', darkTw: 'dark:bg-orange-400/80', border: 'border-orange-300 dark:border-orange-500/50', text: 'text-orange-500 dark:text-orange-300', defaultLabel: '運動' },
-  { id: 'yellow', tw: 'bg-yellow-300', darkTw: 'dark:bg-yellow-400/80', border: 'border-yellow-300 dark:border-yellow-500/50', text: 'text-yellow-600 dark:text-yellow-300', defaultLabel: '閱讀' },
-  { id: 'green',  tw: 'bg-emerald-300', darkTw: 'dark:bg-emerald-400/80', border: 'border-emerald-300 dark:border-emerald-500/50', text: 'text-emerald-500 dark:text-emerald-300', defaultLabel: '健康' },
-  { id: 'blue',   tw: 'bg-blue-300',   darkTw: 'dark:bg-blue-400/80',   border: 'border-blue-300 dark:border-blue-500/50',   text: 'text-blue-500 dark:text-blue-300',   defaultLabel: '工作' },
-  { id: 'purple', tw: 'bg-purple-300', darkTw: 'dark:bg-purple-400/80', border: 'border-purple-300 dark:border-purple-500/50', text: 'text-purple-500 dark:text-purple-300', defaultLabel: '休閒' },
+// Static definitions for colors to support robust dark mode switching
+const COLOR_DEFINITIONS = {
+  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
+  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', borderLight: 'border-orange-300', borderDark: 'border-orange-500/50', textLight: 'text-orange-500', textDark: 'text-orange-300' },
+  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', borderLight: 'border-yellow-300', borderDark: 'border-yellow-500/50', textLight: 'text-yellow-600', textDark: 'text-yellow-300' },
+  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', borderLight: 'border-emerald-300', borderDark: 'border-emerald-500/50', textLight: 'text-emerald-500', textDark: 'text-emerald-300' },
+  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   borderLight: 'border-blue-300',   borderDark: 'border-blue-500/50',   textLight: 'text-blue-500',   textDark: 'text-blue-300' },
+  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', borderLight: 'border-purple-300', borderDark: 'border-purple-500/50', textLight: 'text-purple-500', textDark: 'text-purple-300' },
+};
+
+// Initial state only needs IDs and labels, styling is derived
+const INITIAL_CATEGORIES = [
+  { id: 'red', defaultLabel: '重要' },
+  { id: 'orange', defaultLabel: '運動' },
+  { id: 'yellow', defaultLabel: '閱讀' },
+  { id: 'green', defaultLabel: '健康' },
+  { id: 'blue', defaultLabel: '工作' },
+  { id: 'purple', defaultLabel: '休閒' },
 ];
 
 const WEEK_LABELS = {
@@ -23,6 +34,7 @@ const WEEK_LABELS = {
   en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
 };
 
+// Use stable IDs for default notes
 const DEFAULT_NOTES = [
   { id: 'def-0', text: '' },
   { id: 'def-1', text: '' },
@@ -45,26 +57,26 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- Sub-Components ---
 
-const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect }) => {
+const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark }) => {
   const [viewYear, setViewYear] = useState(currentYear);
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+    <div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 ${isDark ? 'bg-slate-900/40' : 'bg-slate-900/20'}`} onClick={onClose}>
       <div 
-        className="bg-white dark:bg-slate-800 rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border border-white/50 dark:border-slate-700" 
+        className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/50'}`} 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6 px-2">
           <button 
             onClick={() => setViewYear(viewYear - 1)}
-            className="p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-400 transition-colors outline-none"
+            className={`p-2 rounded-full transition-colors outline-none ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-50 text-slate-400 hover:text-slate-600'}`}
           >
             <ChevronLeft size={20} />
           </button>
-          <span className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight font-sans">{viewYear}</span>
+          <span className={`text-xl font-bold tracking-tight font-sans ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{viewYear}</span>
           <button 
             onClick={() => setViewYear(viewYear + 1)}
-            className="p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-400 transition-colors outline-none"
+            className={`p-2 rounded-full transition-colors outline-none ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-50 text-slate-400 hover:text-slate-600'}`}
           >
             <ChevronRight size={20} />
           </button>
@@ -80,8 +92,8 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect }) => {
               className={`
                 py-3 rounded-2xl text-sm font-bold transition-all duration-200 outline-none font-sans
                 ${viewYear === currentYear && i === currentMonth 
-                  ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-lg scale-105' 
-                  : 'bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:scale-105'}
+                  ? (isDark ? 'bg-slate-100 text-slate-900 shadow-lg scale-105' : 'bg-slate-800 text-white shadow-lg scale-105')
+                  : (isDark ? 'bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-slate-200 hover:scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 hover:scale-105')}
               `}
             >
               {i + 1}月
@@ -93,7 +105,7 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect }) => {
   );
 };
 
-const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, currentLang }) => {
+const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, currentLang, isDark }) => {
   const fileInputRef = useRef(null);
   const [mode, setMode] = useState('menu'); 
 
@@ -104,16 +116,27 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
     }
   };
 
+  const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
+  const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
+  const buttonClass = isDark 
+    ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300' 
+    : 'bg-slate-50 hover:bg-slate-100 text-slate-600';
+  const iconBgClass = isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400';
+  const dividerClass = isDark ? 'bg-slate-700' : 'bg-slate-100';
+  const dangerClass = isDark 
+    ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
+    : 'bg-red-50 hover:bg-red-100 text-red-600';
+
   if (mode === 'confirm_reset') {
     return (
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-        <div className="bg-white dark:bg-slate-800 rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border border-red-100 dark:border-red-900/30" onClick={(e) => e.stopPropagation()}>
+        <div className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${isDark ? 'bg-slate-800 border-red-900/30' : 'bg-white border-red-100'}`} onClick={(e) => e.stopPropagation()}>
            <div className="flex flex-col items-center text-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mb-1">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 ${isDark ? 'bg-red-900/50 text-red-400' : 'bg-red-100 text-red-500'}`}>
                  <AlertCircle size={24} />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">確定重置？</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <h3 className={`text-lg font-bold ${titleClass}`}>確定重置？</h3>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 將清除本月所有打卡紀錄。<br/>此動作無法復原。
               </p>
            </div>
@@ -121,7 +144,7 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
            <div className="flex gap-3">
               <button 
                 onClick={() => setMode('menu')}
-                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors outline-none"
+                className={`flex-1 py-3 rounded-2xl font-bold text-sm transition-colors outline-none ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
               >
                 取消
               </button>
@@ -140,32 +163,28 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="bg-white dark:bg-slate-800 rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border border-white/60 dark:border-slate-700" 
+        className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} 
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 px-1">設定與資料</h3>
+        <h3 className={`text-lg font-bold mb-6 px-1 ${titleClass}`}>設定與資料</h3>
         
         <div className="space-y-3">
           <button 
             onClick={toggleLanguage}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors outline-none group"
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}
           >
-            <div className="p-2 bg-white dark:bg-slate-600 rounded-xl text-slate-400 dark:text-slate-200 group-hover:text-purple-500 dark:group-hover:text-purple-300 transition-colors shadow-sm">
+            <div className={`p-2 rounded-xl group-hover:text-purple-500 dark:group-hover:text-purple-300 transition-colors shadow-sm ${iconBgClass}`}>
                <Globe size={18} />
             </div>
-            {/* Updated Text Label */}
             <span className="text-sm font-medium flex-1 text-left">切換星期顯示語言</span>
-            <span className="text-xs font-bold bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded-md text-slate-500 dark:text-slate-300">{currentLang}</span>
+            <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>{currentLang}</span>
           </button>
-
-          {/* Export Image Removed as requested in v40, keeping data export */}
-          {/* Removed export image button */}
 
           <button 
             onClick={onExport}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors outline-none group"
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}
           >
-            <div className="p-2 bg-white dark:bg-slate-600 rounded-xl text-slate-400 dark:text-slate-200 group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm">
+            <div className={`p-2 rounded-xl group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm ${iconBgClass}`}>
                <Download size={18} />
             </div>
             <span className="text-sm font-medium">匯出資料備份</span>
@@ -173,9 +192,9 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
 
           <button 
             onClick={() => fileInputRef.current.click()}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors outline-none group"
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}
           >
-             <div className="p-2 bg-white dark:bg-slate-600 rounded-xl text-slate-400 dark:text-slate-200 group-hover:text-green-500 dark:group-hover:text-green-300 transition-colors shadow-sm">
+             <div className={`p-2 rounded-xl group-hover:text-green-500 dark:group-hover:text-green-300 transition-colors shadow-sm ${iconBgClass}`}>
                <Upload size={18} />
              </div>
             <span className="text-sm font-medium">匯入資料</span>
@@ -188,13 +207,13 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
             />
           </button>
 
-          <div className="h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
+          <div className={`h-px my-2 ${dividerClass}`}></div>
 
           <button 
             onClick={() => setMode('confirm_reset')}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors outline-none group"
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${dangerClass}`}
           >
-             <div className="p-2 bg-white/80 dark:bg-slate-600 rounded-xl text-red-400 group-hover:text-red-600 transition-colors shadow-sm">
+             <div className={`p-2 rounded-xl group-hover:text-red-600 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-red-400' : 'bg-white/80 text-red-400'}`}>
                <RotateCcw size={18} />
              </div>
             <span className="text-sm font-medium">重置本月紀錄</span>
@@ -206,15 +225,15 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, c
 };
 
 // --- Note Row Component ---
-const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect }) => {
+const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect, isDark }) => {
   const inputRef = useRef(null);
 
   return (
     <div 
       className={`group flex items-end gap-2 relative transition-all duration-200 
         ${isReordering ? 'p-2 -mx-2 rounded-lg border border-transparent' : ''}
-        ${isReordering && !isSelected ? 'hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-100 dark:border-slate-700' : ''}
-        ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 ring-1 ring-blue-300 dark:ring-blue-700 z-10' : ''}
+        ${isReordering && !isSelected ? (isDark ? 'hover:bg-slate-800 border-slate-700' : 'hover:bg-slate-50 border-slate-100') : ''}
+        ${isSelected ? (isDark ? 'bg-blue-900/30 border-blue-800 ring-1 ring-blue-700' : 'bg-blue-50 border-blue-200 ring-1 ring-blue-300') + ' z-10' : ''}
       `}
       onClick={(e) => {
         if (isReordering) {
@@ -225,13 +244,15 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
         }
       }}
     >
-       <div className="h-full w-0.5 bg-slate-300 dark:bg-slate-600 absolute left-0 top-1 bottom-1 rounded-full group-focus-within:bg-slate-500 dark:group-focus-within:bg-slate-400 transition-colors"></div>
+       <div className={`h-full w-0.5 absolute left-0 top-1 bottom-1 rounded-full transition-colors ${isDark ? 'bg-slate-600 group-focus-within:bg-slate-400' : 'bg-slate-300 group-focus-within:bg-slate-500'}`}></div>
        <input 
          ref={inputRef}
          value={note.text}
          onChange={onChange}
          onTouchStart={(e) => !isReordering && e.stopPropagation()}
-         className={`flex-1 text-sm text-slate-700 dark:text-slate-200 bg-transparent border-b border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 focus:ring-0 px-3 pb-2 transition-all outline-none ${isReordering ? 'pointer-events-none' : ''} placeholder:text-slate-300 dark:placeholder:text-slate-600`}
+         className={`flex-1 text-sm bg-transparent border-b focus:ring-0 px-3 pb-2 transition-all outline-none 
+            ${isDark ? 'text-slate-200 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-700 border-slate-200 focus:border-slate-400 placeholder:text-slate-300'} 
+            ${isReordering ? 'pointer-events-none' : ''}`}
          placeholder={isReordering ? "點擊以交換順序" : "寫點什麼..."}
          readOnly={isReordering}
        />
@@ -241,7 +262,7 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
              e.stopPropagation();
              onDelete();
            }}
-           className="text-slate-300 dark:text-slate-600 hover:text-red-400 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1 outline-none"
+           className={`opacity-0 group-hover:opacity-100 transition-all p-1 outline-none ${isDark ? 'text-slate-600 hover:text-red-400' : 'text-slate-300 hover:text-red-400'}`}
          >
             <Trash2 size={14} />
          </button>
@@ -259,7 +280,10 @@ export default function NewCalendarApp() {
   const [gridMode, setGridMode] = useState(4); 
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
-  const [categories, setCategories] = useState(INITIAL_COLORS);
+  
+  // FIXED: categories is now state again to allow reorder/update
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -268,7 +292,7 @@ export default function NewCalendarApp() {
   const [weekNotes, setWeekNotes] = useState({});
   const [allFooterNotes, setAllFooterNotes] = useState({});
   
-  const [selectedColor, setSelectedColor] = useState(INITIAL_COLORS[0].id);
+  const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   
   const [reorderMode, setReorderMode] = useState(null);
@@ -279,26 +303,26 @@ export default function NewCalendarApp() {
 
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v42_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v45_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
-      } else if (defaultVal) {
+      } else if (defaultVal !== undefined) {
         setter(defaultVal);
       }
     };
     load('title', setAppTitle);
     load('gridMode', setGridMode);
-    load('categories', setCategories, INITIAL_COLORS);
+    load('categories', setCategories, INITIAL_CATEGORIES);
     load('records', setRecords);
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v42_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v45_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v42_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v45_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -312,14 +336,14 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v42_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v42_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v42_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v42_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v42_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v42_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v42_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v42_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v45_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v45_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v45_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v45_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v45_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v45_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v45_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v45_darkMode', JSON.stringify(darkMode));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode]);
 
   const year = currentDate.getFullYear();
@@ -576,11 +600,14 @@ export default function NewCalendarApp() {
       }
     `}} />
 
-    <div className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}>
-      <div className={`w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl flex flex-col relative border border-white/60 dark:border-slate-800 transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]`}>
+    <div className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}>
+      {/* Auto Height for Mobile Full View */}
+      <div className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]
+         ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}
+      `}>
         
         {/* Modals */}
-        {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} />}
+        {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} />}
         {showSettings && (
             <SettingsModal 
                 onClose={() => setShowSettings(false)} 
@@ -589,6 +616,7 @@ export default function NewCalendarApp() {
                 onImport={handleImportData} 
                 toggleLanguage={toggleLanguage}
                 currentLang={langKey.toUpperCase()}
+                isDark={darkMode}
             />
         )}
         
@@ -606,7 +634,7 @@ export default function NewCalendarApp() {
             <input
               value={appTitle}
               onChange={(e) => setAppTitle(e.target.value)}
-              className="text-2xl font-bold bg-transparent border-none focus:ring-0 p-0 text-slate-800 dark:text-slate-100 placeholder-slate-300 w-full outline-none"
+              className={`text-2xl font-bold bg-transparent border-none focus:ring-0 p-0 w-full outline-none ${darkMode ? 'text-slate-100 placeholder-slate-600' : 'text-slate-800 placeholder-slate-300'}`}
               placeholder="自定義標題"
             />
             
@@ -615,7 +643,7 @@ export default function NewCalendarApp() {
                   className="group cursor-pointer flex items-center outline-none"
                   onClick={() => setShowDatePicker(true)}
                 >
-                   <h2 className="text-lg font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
+                   <h2 className={`text-lg font-medium transition-colors ${darkMode ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>
                      {year}年 {month + 1}月
                    </h2>
                 </div>
@@ -623,7 +651,7 @@ export default function NewCalendarApp() {
                 {/* Today Button */}
                 <button 
                   onClick={handleJumpToToday}
-                  className="flex items-center gap-1 pl-2 pr-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                  className={`flex items-center gap-1 pl-2 pr-3 py-1 rounded-full transition-colors ${darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-800'}`}
                   title="回到今天"
                 >
                   <CalendarIcon size={14} />
@@ -634,19 +662,19 @@ export default function NewCalendarApp() {
 
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-              <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 outline-none">
+              <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 {gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}
               </button>
-              <button onClick={toggleDarkMode} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 outline-none">
+              <button onClick={toggleDarkMode} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                  {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setView(view === 'calendar' ? 'stats' : 'calendar')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 border outline-none ${view === 'stats' ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-800 dark:border-slate-100 shadow-md' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border-transparent hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-200 dark:hover:border-slate-700'}`}>
+              <button onClick={() => setView(view === 'calendar' ? 'stats' : 'calendar')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 border outline-none ${view === 'stats' ? (darkMode ? 'bg-slate-100 text-slate-900 border-slate-100' : 'bg-slate-800 text-white border-slate-800') : (darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-700' : 'bg-slate-50 text-slate-400 hover:text-slate-600 border-transparent hover:bg-slate-100 hover:border-slate-200')}`}>
                 <BarChart2 size={18} />
               </button>
               
-              <button onClick={() => setShowSettings(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 outline-none">
+              <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 <Settings size={18} />
               </button>
             </div>
@@ -664,7 +692,7 @@ export default function NewCalendarApp() {
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
                      <div className="grid grid-cols-7 gap-1">
                         {currentWeekLabels.map((day, i) => (
-                          <div key={i} className="text-center text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide py-2">{day}</div>
+                          <div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>
                         ))}
                      </div>
                      <div className="w-8"></div>
@@ -686,8 +714,9 @@ export default function NewCalendarApp() {
                             
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
-                               const colorData = categories.find(c => c.id === colorId);
-                               const twColor = colorData ? (darkMode ? colorData.darkTw : colorData.tw) : 'bg-transparent';
+                               const activeCatState = categories.find(c => c.id === colorId);
+                               const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
+                               const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
 
                                subCells.push(
                                  <div 
@@ -699,10 +728,11 @@ export default function NewCalendarApp() {
                                     }}
                                     className={`
                                       relative w-full h-full cursor-pointer outline-none hoverable
-                                      ${twColor} hover:opacity-80
+                                      ${finalColor} hover:opacity-80
                                     `}
                                  >
-                                    <div className={`absolute inset-0 pointer-events-none border-slate-200 dark:border-slate-700/50
+                                    <div className={`absolute inset-0 pointer-events-none 
+                                       ${darkMode ? 'border-slate-700/50' : 'border-slate-200'}
                                        ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
                                        ${gridMode === 4 && i === 1 ? 'border-b-[0.5px]' : ''}
                                        ${gridMode === 4 && i === 2 ? 'border-r-[0.5px]' : ''}
@@ -719,7 +749,10 @@ export default function NewCalendarApp() {
                               <div key={dayIndex} 
                                    className={`
                                      relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors
-                                     ${isCurrent ? 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600' : 'bg-white/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 opacity-40'}
+                                     ${isCurrent 
+                                        ? (darkMode ? 'bg-slate-800 border border-slate-600' : 'bg-white border border-slate-300')
+                                        : (darkMode ? 'bg-slate-800/30 border border-slate-800 opacity-40' : 'bg-white/50 border border-slate-200 opacity-40')
+                                     }
                                    `}>
                                  <div className={`flex-1 grid ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>
                                     {subCells}
@@ -728,8 +761,9 @@ export default function NewCalendarApp() {
                                    <span className={`
                                      text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all
                                      ${isTodayDate 
-                                        ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900'
-                                        : 'text-slate-500 dark:text-slate-400'}
+                                        ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white')
+                                        : (darkMode ? 'text-slate-400' : 'text-slate-500')
+                                     }
                                    `}>
                                      {cell.day}
                                    </span>
@@ -744,7 +778,7 @@ export default function NewCalendarApp() {
                               value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''}
                               onChange={(e) => setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: e.target.value})}
                               placeholder={`W${weekIndex + 1}`}
-                              className="w-full h-full text-center text-[10px] text-slate-400 dark:text-slate-500 placeholder-slate-200 dark:placeholder-slate-700 bg-transparent border-none focus:ring-0 p-0 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none"
+                              className={`w-full h-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none ${darkMode ? 'text-slate-500 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-400 placeholder-slate-200 hover:bg-slate-50'}`}
                            />
                         </div>
                       </div>
@@ -755,27 +789,29 @@ export default function NewCalendarApp() {
               {/* Color Palette */}
               <div className="mt-6 px-1">
                  <div className="flex items-center justify-start gap-2 mb-3">
-                    <h3 className="text-[10px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-widest">Categories</h3>
+                    <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>Categories</h3>
                     <button 
                       onClick={() => toggleReorderMode('color')}
-                      className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-500 dark:hover:text-slate-300'}`}
+                      className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
                     >
                       <ArrowRightLeft size={14} />
                     </button>
                  </div>
                  <div className="grid grid-cols-3 gap-3">
-                    {categories.map((cat) => (
+                    {categories.map((cat) => {
+                      const style = COLOR_DEFINITIONS[cat.id];
+                      return (
                       <div 
                         key={cat.id} 
                         onClick={() => reorderMode === 'color' ? handleItemSwap(cat.id, 'color') : setSelectedColor(cat.id)}
                         className={`
                            flex items-center gap-3 p-2 rounded-2xl border transition-all cursor-pointer outline-none select-none relative
-                           ${reorderMode === 'color' ? 'border-dashed border-blue-200 dark:border-blue-800' : ''}
-                           ${swapSourceId === cat.id ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-300 dark:ring-blue-700' : ''}
-                           ${!reorderMode && selectedColor === cat.id ? 'border-slate-800 dark:border-slate-100 bg-white dark:bg-slate-800 shadow-md transform scale-[1.02]' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'}
+                           ${reorderMode === 'color' ? (darkMode ? 'border-dashed border-blue-800' : 'border-dashed border-blue-200') : ''}
+                           ${swapSourceId === cat.id ? (darkMode ? 'bg-blue-900/20 ring-2 ring-blue-700' : 'bg-blue-50 ring-2 ring-blue-300') : ''}
+                           ${!reorderMode && selectedColor === cat.id ? (darkMode ? 'border-slate-100 bg-slate-800 shadow-md scale-[1.02]' : 'border-slate-800 bg-white shadow-md scale-[1.02]') : (darkMode ? 'border-slate-800 bg-slate-800 hover:border-slate-600' : 'border-slate-100 bg-white hover:border-slate-300')}
                         `}
                       >
-                         <div className={`w-6 h-6 rounded-full ${darkMode ? cat.darkTw : cat.tw} flex-shrink-0 ring-1 ring-black/5 dark:ring-white/10 shadow-inner`}></div>
+                         <div className={`w-6 h-6 rounded-full flex-shrink-0 ring-1 shadow-inner ${darkMode ? style.dark + ' ring-white/10' : style.light + ' ring-black/5'}`}></div>
                          
                          {editingCategoryId === cat.id && !reorderMode ? (
                            <input 
@@ -785,7 +821,7 @@ export default function NewCalendarApp() {
                              onBlur={() => setEditingCategoryId(null)}
                              onKeyDown={(e) => e.key === 'Enter' && setEditingCategoryId(null)}
                              onClick={(e) => e.stopPropagation()} 
-                             className="w-full text-xs text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border-b border-blue-500 focus:ring-0 p-0 font-medium outline-none"
+                             className={`w-full text-xs border-b focus:ring-0 p-0 font-medium outline-none ${darkMode ? 'text-slate-100 bg-slate-800 border-blue-500' : 'text-slate-800 bg-white border-blue-500'}`}
                            />
                          ) : (
                            <span 
@@ -795,14 +831,14 @@ export default function NewCalendarApp() {
                                  setEditingCategoryId(cat.id);
                                }
                              }}
-                             className={`w-full text-xs text-slate-600 dark:text-slate-300 font-medium truncate ${reorderMode ? 'pointer-events-none' : ''}`}
+                             className={`w-full text-xs font-medium truncate ${darkMode ? 'text-slate-300' : 'text-slate-600'} ${reorderMode ? 'pointer-events-none' : ''}`}
                              title="雙擊編輯"
                            >
                              {cat.defaultLabel}
                            </span>
                          )}
                       </div>
-                    ))}
+                    )})}
                  </div>
               </div>
 
@@ -810,15 +846,15 @@ export default function NewCalendarApp() {
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
-                      <h3 className="text-[10px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-widest">Memo ({month + 1}月)</h3>
+                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>Memo ({month + 1}月)</h3>
                       <button 
                         onClick={() => toggleReorderMode('note')}
-                        className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-500 dark:hover:text-slate-300'}`}
+                        className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
                       >
                         <ArrowRightLeft size={14} />
                       </button>
                    </div>
-                   <button onClick={handleAddNote} className="text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 p-1 bg-slate-100 dark:bg-slate-800 rounded-full transition-colors outline-none">
+                   <button onClick={handleAddNote} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}>
                      <Plus size={12} />
                    </button>
                  </div>
@@ -832,6 +868,7 @@ export default function NewCalendarApp() {
                         isReordering={reorderMode === 'note'}
                         isSelected={swapSourceId === note.id}
                         onReorderSelect={(id) => handleItemSwap(id, 'note')}
+                        isDark={darkMode}
                       />
                     ))}
                  </div>
@@ -847,6 +884,7 @@ export default function NewCalendarApp() {
                     const diff = current - prev;
                     const barWidth = stats.maxCount > 0 ? (current / stats.maxCount) * 100 : 0;
                     const rangeInfo = stats.range[cat.id];
+                    const style = COLOR_DEFINITIONS[cat.id];
                     
                     let freqText = "0.0 / m";
                     if (rangeInfo.hasData) {
@@ -862,30 +900,30 @@ export default function NewCalendarApp() {
                       <div key={cat.id} className="w-full">
                          <div className="flex justify-between items-end mb-1.5">
                             <div className="flex items-center gap-2">
-                               <div className={`w-3 h-3 rounded-full ${darkMode ? cat.darkTw : cat.tw}`}></div>
-                               <span className="font-bold text-xs text-slate-600 dark:text-slate-300">{cat.defaultLabel}</span>
+                               <div className={`w-3 h-3 rounded-full ${darkMode ? style.dark : style.light}`}></div>
+                               <span className={`font-bold text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{cat.defaultLabel}</span>
                             </div>
                             <div className="flex flex-col items-end">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-bold text-slate-800 dark:text-slate-100 leading-none">{current}</span>
-                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">/ {stats.totalCounts[cat.id]}</span>
+                                    <span className={`text-2xl font-bold leading-none ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
+                                    <span className={`text-[10px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>/ {stats.totalCounts[cat.id]}</span>
                                 </div>
-                                <span className="text-[8px] text-slate-600 dark:text-slate-300 font-bold mt-0.5">
+                                <span className={`text-[8px] font-bold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                     Avg: {freqText}
                                 </span>
                             </div>
                          </div>
                          
-                         <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
+                         <div className={`h-3 w-full rounded-full overflow-hidden relative ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                             <div 
-                               className={`h-full rounded-full ${darkMode ? cat.darkTw : cat.tw} transition-all duration-500 ease-out`}
+                               className={`h-full rounded-full transition-all duration-500 ease-out ${darkMode ? style.dark : style.light}`}
                                style={{ width: `${Math.max(barWidth, 2)}%` }} 
                             ></div>
                          </div>
 
                          <div className="mt-1 flex justify-end">
-                            <span className={`text-[9px] font-bold ${diff >= 0 ? 'text-slate-600 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
-                               {diff >= 0 ? '+' : ''}{diff} <span className="font-normal text-slate-400 dark:text-slate-500">vs last month</span>
+                            <span className={`text-[9px] font-bold ${diff >= 0 ? (darkMode ? 'text-slate-400' : 'text-slate-500') : (darkMode ? 'text-slate-500' : 'text-slate-400')}`}>
+                               {diff >= 0 ? '+' : ''}{diff} <span className={`font-normal ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>vs last month</span>
                             </span>
                          </div>
                       </div>
