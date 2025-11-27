@@ -8,25 +8,6 @@ import {
 
 // --- Constants & Config ---
 
-// NEW: Built-in App Icon (The Grid Style)
-// This SVG creates a squircle icon with colorful dots matching the app theme
-const APP_ICON_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
-  <circle cx="128" cy="128" r="56" fill="#fca5a5"/> 
-  <circle cx="256" cy="128" r="56" fill="#fdba74"/> 
-  <circle cx="384" cy="128" r="56" fill="#fde047"/> 
-  <circle cx="128" cy="256" r="56" fill="#6ee7b7"/> 
-  <circle cx="256" cy="256" r="56" fill="#93c5fd"/> 
-  <circle cx="384" cy="256" r="56" fill="#d8b4fe"/> 
-  <circle cx="128" cy="384" r="56" fill="#f1f5f9"/> 
-  <circle cx="256" cy="384" r="56" fill="#f1f5f9"/> 
-  <circle cx="384" cy="384" r="56" fill="#f1f5f9"/> 
-</svg>
-`.trim();
-
-const APP_ICON_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(APP_ICON_SVG)}`;
-
 // Static definitions for colors to support robust dark mode switching
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
@@ -298,6 +279,7 @@ export default function NewCalendarApp() {
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
   
+  // FIXED: categories is now state again to allow reorder/update
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -317,28 +299,75 @@ export default function NewCalendarApp() {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
-  // --- AUTO-INJECT ICON ON MOUNT ---
+  // --- AUTO-GENERATE PNG ICON VIA CANVAS ---
+  // This forces a real image instead of a code snippet, better for iOS
   useEffect(() => {
-    // Check if link already exists to avoid duplicates
-    if (!document.querySelector("link[rel*='icon']")) {
-        const link = document.createElement('link');
-        link.type = 'image/svg+xml';
+    const generateIcon = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Background - White Square
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Colors matching the App
+        const dotColors = [
+            '#fca5a5', '#fdba74', '#fde047', // Red, Orange, Yellow
+            '#6ee7b7', '#93c5fd', '#d8b4fe', // Green, Blue, Purple
+            '#f1f5f9', '#f1f5f9', '#f1f5f9'  // Gray Placeholders
+        ];
+
+        // Draw 3x3 Grid of Dots
+        const radius = 56;
+        const gap = 128;
+        const startX = 128;
+        const startY = 128;
+
+        dotColors.forEach((color, i) => {
+            const row = Math.floor(i / 3);
+            const col = i % 3;
+            const x = startX + col * gap;
+            const y = startY + row * gap;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+
+        return canvas.toDataURL('image/png');
+    };
+
+    const iconUrl = generateIcon();
+
+    // Inject into Head
+    // 1. Standard Icon
+    let link = document.querySelector("link[rel*='icon']");
+    if (!link) {
+        link = document.createElement('link');
         link.rel = 'icon';
-        link.href = APP_ICON_URI;
         document.head.appendChild(link);
     }
-    if (!document.querySelector("link[rel='apple-touch-icon']")) {
-        const appleLink = document.createElement('link');
+    link.type = 'image/png';
+    link.href = iconUrl;
+
+    // 2. Apple Touch Icon
+    let appleLink = document.querySelector("link[rel='apple-touch-icon']");
+    if (!appleLink) {
+        appleLink = document.createElement('link');
         appleLink.rel = 'apple-touch-icon';
-        appleLink.href = APP_ICON_URI;
         document.head.appendChild(appleLink);
     }
+    appleLink.href = iconUrl;
+    
   }, []);
 
   // Persistence: Local Storage
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v51_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v54_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -353,11 +382,11 @@ export default function NewCalendarApp() {
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v51_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v54_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v51_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v54_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -371,14 +400,14 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v51_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v51_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v51_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v51_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v51_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v51_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v51_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v51_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v54_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v54_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v54_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v54_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v54_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v54_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v54_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v54_darkMode', JSON.stringify(darkMode));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode]);
 
   const year = currentDate.getFullYear();
@@ -749,7 +778,8 @@ export default function NewCalendarApp() {
                             
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
-                               const activeCatState = categories.find(c => c.id === colorId);
+                               // Safety: Ensure category exists before lookup
+                               const activeCatState = categories?.find(c => c.id === colorId);
                                const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
                                const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
 
