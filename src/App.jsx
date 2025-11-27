@@ -6,9 +6,9 @@ import {
   Globe, AlertTriangle, Clock
 } from 'lucide-react';
 
-// --- 1. Constants & Config (Moved outside to prevent re-creation) ---
+// --- 1. Constants & Config ---
 
-// Built-in App Icon (The Grid Style)
+// Built-in App Icon (The Grid Style) - SVG Source
 const APP_ICON_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
@@ -147,9 +147,17 @@ const SettingsModal = ({
     ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
     : 'bg-red-50 hover:bg-red-100 text-red-600';
   
-  const formattedLastBackup = lastBackupDate 
-    ? new Date(lastBackupDate).toLocaleDateString() + ' ' + new Date(lastBackupDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    : '尚未備份';
+  let formattedLastBackup = '尚未備份';
+  try {
+      if (lastBackupDate) {
+          const date = new Date(lastBackupDate);
+          if (!isNaN(date.getTime())) {
+              formattedLastBackup = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+          }
+      }
+  } catch (e) {
+      formattedLastBackup = '時間格式錯誤';
+  }
 
   if (mode === 'confirm_reset') {
     return (
@@ -194,7 +202,6 @@ const SettingsModal = ({
            <h3 className={`text-lg font-bold ${titleClass}`}>設定與資料</h3>
         </div>
         
-        {/* Backup Reminder Widget - Fixed Text Visibility */}
         <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs 
             ${isBackupOverdue 
               ? (isDark ? 'bg-red-900/20 text-red-400 ring-1 ring-red-900/50' : 'bg-red-50 text-red-600 ring-1 ring-red-200') 
@@ -310,7 +317,7 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 };
 
 
-// --- Main Application ---
+// --- 4. Main Application ---
 
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -319,7 +326,6 @@ export default function NewCalendarApp() {
   const [view, setView] = useState('calendar'); 
   const [langIndex, setLangIndex] = useState(0); 
   
-  // FIXED: categories is now state again to allow reorder/update
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -386,14 +392,13 @@ export default function NewCalendarApp() {
         appleLink.href = iconUrl;
         document.head.appendChild(appleLink);
     };
-    // Delay injection slightly to ensure clean state
-    setTimeout(injectIcon, 500);
+    setTimeout(injectIcon, 1000);
   }, []);
 
-  // Persistence: Local Storage
+  // Persistence
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
-      const saved = localStorage.getItem(`calendar_app_v61_${key}`);
+      const saved = localStorage.getItem(`calendar_app_v70_${key}`);
       if (saved) {
         try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); }
       } else if (defaultVal !== undefined) {
@@ -415,11 +420,11 @@ export default function NewCalendarApp() {
        }
     });
 
-    const savedNewNotes = localStorage.getItem('calendar_app_v61_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v70_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      const savedOldNotes = localStorage.getItem('calendar_app_v61_footerNotes');
+      const savedOldNotes = localStorage.getItem('calendar_app_v70_footerNotes');
       if (savedOldNotes) {
         try {
           const parsedOld = JSON.parse(savedOldNotes);
@@ -433,16 +438,16 @@ export default function NewCalendarApp() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v61_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v61_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v61_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v61_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v61_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v61_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v61_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v61_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v61_lastBackupDate', JSON.stringify(lastBackupDate));
-    localStorage.setItem('calendar_app_v61_categoryOrder', JSON.stringify(categories.map(c => c.id)));
+    localStorage.setItem('calendar_app_v70_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v70_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v70_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v70_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v70_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v70_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v70_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v70_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v70_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v70_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
@@ -452,6 +457,14 @@ export default function NewCalendarApp() {
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
 
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
+  
+  // --- BACKUP REMINDER LOGIC ---
+  const isBackupOverdue = useMemo(() => {
+      if (!lastBackupDate) return true; 
+      const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      return diffDays > BACKUP_REMINDER_DAYS;
+  }, [lastBackupDate]);
 
   // --- Handlers ---
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -526,8 +539,7 @@ export default function NewCalendarApp() {
 
   const handleExportData = () => {
     const now = new Date().toISOString();
-    setLastBackupDate(now); // Update backup time
-    
+    setLastBackupDate(now);
     const data = {
       appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex,
       exportedAt: now
@@ -560,8 +572,7 @@ export default function NewCalendarApp() {
             setAllFooterNotes({ [importKey]: data.footerNotes });
         }
         if (data.langIndex !== undefined) setLangIndex(data.langIndex);
-        
-        setLastBackupDate(new Date().toISOString()); // Treat import as a fresh start
+        setLastBackupDate(new Date().toISOString());
         setShowSettings(false);
       } catch (error) {
         setShowSettings(false);
@@ -608,14 +619,6 @@ export default function NewCalendarApp() {
       setSwapSourceId(null);
     }
   };
-
-  // --- Check Backup Status ---
-  const isBackupOverdue = useMemo(() => {
-      if (!lastBackupDate) return true; 
-      const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      return diffDays > BACKUP_REMINDER_DAYS;
-  }, [lastBackupDate]);
 
   // --- Stats Logic & Grid Construction ---
   const calendarDays = useMemo(() => {
@@ -996,7 +999,7 @@ export default function NewCalendarApp() {
               </div>
             </>
           ) : (
-            // --- Statistics View ---
+            // --- Statistics View (NEW V66 LAYOUT - Balanced) ---
             <div className="h-full flex flex-col justify-start pt-4 pb-8 animate-in fade-in zoom-in duration-300 px-3">
                <div className="space-y-4">
                  {categories.map((cat) => {
@@ -1007,18 +1010,17 @@ export default function NewCalendarApp() {
                     const rangeInfo = stats.range[cat.id];
                     const style = COLOR_DEFINITIONS[cat.id];
                     
-                    let freqText = "0.0 / m";
+                    let freqText = "0 / 月";
                     if (rangeInfo.hasData) {
                         const startDate = new Date(rangeInfo.minVal);
                         const endDate = new Date(rangeInfo.maxVal);
                         const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1;
                         const total = stats.totalCounts[cat.id];
-                        const avg = total / Math.max(1, monthsDiff);
-                        freqText = `${avg.toFixed(1)} / m`;
+                        const avg = Math.floor(total / Math.max(1, monthsDiff));
+                        freqText = `${avg} / 月`;
                     }
 
-                    // Determine color class for diff text
-                    let diffColorClass = darkMode ? 'text-slate-500' : 'text-slate-400'; // Default neutral
+                    let diffColorClass = darkMode ? 'text-slate-500' : 'text-slate-400'; 
                     if (diff > 0) {
                         diffColorClass = darkMode ? 'text-emerald-400' : 'text-emerald-600';
                     } else if (diff < 0) {
@@ -1026,33 +1028,45 @@ export default function NewCalendarApp() {
                     }
 
                     return (
-                      <div key={cat.id} className="w-full">
-                         <div className="flex justify-between items-end mb-1.5">
-                            <div className="flex items-center gap-2">
+                      <div key={cat.id} className={`w-full py-2 border-b ${darkMode ? 'border-slate-800' : 'border-slate-50'} last:border-0`}>
+                         {/* Row 1: Category Label (Left) + Current Count (Below Label, Smaller 3xl) */}
+                         <div className="flex flex-col items-start mb-2">
+                            <div className="flex items-center gap-2 mb-1">
                                <div className={`w-3 h-3 rounded-full ${darkMode ? style.dark : style.light}`}></div>
-                               <span className={`font-bold text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{cat.defaultLabel}</span>
+                               <span className={`font-bold text-sm ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
                             </div>
-                            <div className="flex flex-col items-end">
-                                <div className="flex items-baseline gap-2">
-                                    <span className={`text-2xl font-bold leading-none ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
-                                    <span className={`text-[10px] text-slate-400 dark:text-slate-500 font-medium`}>/ {stats.totalCounts[cat.id]}</span>
-                                </div>
-                                <span className={`text-[8px] font-bold mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                    Avg: {freqText}
-                                </span>
+                            
+                            <div className="flex items-baseline gap-1 ml-5">
+                                {/* OPTIMIZED: Reduced from 4xl to 3xl for balance */}
+                                <span className={`text-3xl font-bold leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
+                                <span className={`text-[10px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>本月次數</span>
                             </div>
                          </div>
+
+                         {/* Row 2: Freq & Diff (Right Aligned) */}
+                         <div className="flex justify-end items-center gap-4 mb-1.5 px-1">
+                             <span className={`text-xs font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                頻率: {freqText}
+                             </span>
+                             <span className={`text-xs font-bold ${diffColorClass}`}>
+                                {diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} <span className={`font-normal text-[10px] ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>vs 上月</span>
+                             </span>
+                         </div>
                          
-                         <div className={`h-3 w-full rounded-full overflow-hidden relative ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                         {/* Row 3: Visual Bar */}
+                         <div className={`h-2 w-full rounded-full overflow-hidden relative mb-1.5 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                             <div 
                                className={`h-full rounded-full transition-all duration-500 ease-out ${darkMode ? style.dark : style.light}`}
                                style={{ width: `${Math.max(barWidth, 2)}%` }} 
                             ></div>
                          </div>
 
-                         <div className="mt-1 flex justify-end">
-                            <span className={`text-[9px] font-bold ${diffColorClass}`}>
-                               {diff >= 0 ? '+' : ''}{diff} <span className={`font-normal ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>vs last month</span>
+                         {/* Row 4: Total Count + Date Range (Increased legibility) */}
+                         <div className="flex justify-end">
+                            {/* OPTIMIZED: Increased text size and weight for readability */}
+                            <span className={`text-[11px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                               截至今日總計: {stats.totalCounts[cat.id]} 
+                               {rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}
                             </span>
                          </div>
                       </div>
