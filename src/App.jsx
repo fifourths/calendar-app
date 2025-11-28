@@ -479,15 +479,12 @@ export default function NewCalendarApp() {
     };
     load('title', setAppTitle);
     load('gridMode', setGridMode);
-    // Modified: Directly load categories (which contains order and labels), do not use separate order logic to overwrite labels
     load('categories', setCategories, INITIAL_CATEGORIES);
     load('records', setRecords);
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
     load('lastBackupDate', setLastBackupDate, null);
-    
-    // REMOVED: The conflicting 'categoryOrder' loader that was resetting labels
     
     const savedNewNotes = localStorage.getItem('calendar_app_v70_allFooterNotes');
     if (savedNewNotes) {
@@ -516,7 +513,6 @@ export default function NewCalendarApp() {
     localStorage.setItem('calendar_app_v70_langIndex', JSON.stringify(langIndex));
     localStorage.setItem('calendar_app_v70_darkMode', JSON.stringify(darkMode));
     localStorage.setItem('calendar_app_v70_lastBackupDate', JSON.stringify(lastBackupDate));
-    // Kept for legacy compatibility, but not used for loading labels anymore
     localStorage.setItem('calendar_app_v70_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
@@ -585,10 +581,9 @@ export default function NewCalendarApp() {
     setCategories(prev => prev.map(c => c.id === id ? { ...c, defaultLabel: newLabel } : c));
   };
   
+  // MODIFIED: Removed empty check to allow clearing the label
   const saveCategoryLabel = (id) => {
-    if (tempLabel.trim() !== '') {
-        updateCategoryLabel(id, tempLabel);
-    }
+    updateCategoryLabel(id, tempLabel);
     setEditingCategoryId(null);
   };
 
@@ -1119,8 +1114,8 @@ export default function NewCalendarApp() {
                          {/* LEFT: Label & Big Number */}
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
                             <div className="flex items-center gap-1.5 mb-1">
-                               <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
-                               <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+                                <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
+                                <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
                             </div>
                             <span className={`text-4xl font-black leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                                {current}
