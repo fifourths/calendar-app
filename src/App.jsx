@@ -3,18 +3,18 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock
+  Globe, AlertTriangle, Clock, X, Eraser
 } from 'lucide-react';
 
 // --- 1. Constants & Config ---
 
 const COLOR_DEFINITIONS = {
-  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
-  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', borderLight: 'border-orange-300', borderDark: 'border-orange-500/50', textLight: 'text-orange-500', textDark: 'text-orange-300' },
-  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', borderLight: 'border-yellow-300', borderDark: 'border-yellow-500/50', textLight: 'text-yellow-600', textDark: 'text-yellow-300' },
-  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', borderLight: 'border-emerald-300', borderDark: 'border-emerald-500/50', textLight: 'text-emerald-500', textDark: 'text-emerald-300' },
-  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   borderLight: 'border-blue-300',   borderDark: 'border-blue-500/50',   textLight: 'text-blue-500',   textDark: 'text-blue-300' },
-  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', borderLight: 'border-purple-300', borderDark: 'border-purple-500/50', textLight: 'text-purple-500', textDark: 'text-purple-300' },
+  red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', modalLight: 'bg-red-100',    modalDark: 'bg-red-400/20', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
+  orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', modalLight: 'bg-orange-100', modalDark: 'bg-orange-400/20', borderLight: 'border-orange-300', borderDark: 'border-orange-500/50', textLight: 'text-orange-500', textDark: 'text-orange-300' },
+  yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', modalLight: 'bg-yellow-100', modalDark: 'bg-yellow-400/20', borderLight: 'border-yellow-300', borderDark: 'border-yellow-500/50', textLight: 'text-yellow-600', textDark: 'text-yellow-300' },
+  green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', modalLight: 'bg-emerald-100', modalDark: 'bg-emerald-400/20', borderLight: 'border-emerald-300', borderDark: 'border-emerald-500/50', textLight: 'text-emerald-500', textDark: 'text-emerald-300' },
+  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   modalLight: 'bg-blue-100',   modalDark: 'bg-blue-400/20',   borderLight: 'border-blue-300',   borderDark: 'border-blue-500/50',   textLight: 'text-blue-500',   textDark: 'text-blue-300' },
+  purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', modalLight: 'bg-purple-100', modalDark: 'bg-purple-400/20', borderLight: 'border-purple-300', borderDark: 'border-purple-500/50', textLight: 'text-purple-500', textDark: 'text-purple-300' },
 };
 
 const INITIAL_CATEGORIES = [
@@ -55,7 +55,8 @@ const TRANSLATIONS = {
     statsMonthCount: '本月次數',
     statsVsLast: 'vs 上月',
     perMonth: '/ 月',
-    monthSuffix: '月'
+    monthSuffix: '月',
+    cardHint: '點擊輸入文字內容'
   },
   jp: {
     weekDays: ['月', '火', '水', '木', '金', '土', '日'],
@@ -85,7 +86,8 @@ const TRANSLATIONS = {
     statsMonthCount: '今月の回数',
     statsVsLast: '先月比',
     perMonth: '/ 月',
-    monthSuffix: '月'
+    monthSuffix: '月',
+    cardHint: 'タップして入力'
   },
   en: {
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -116,7 +118,8 @@ const TRANSLATIONS = {
     statsVsLast: 'vs Last',
     perMonth: '/ mo',
     monthSuffix: '',
-    monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    cardHint: 'Tap to type'
   }
 };
 
@@ -131,6 +134,7 @@ const BACKUP_REMINDER_DAYS = 7;
 // --- 2. Helper Functions ---
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+
 const getFirstDayOfMonth = (year, month) => {
   const day = new Date(year, month, 1).getDay();
   return day === 0 ? 6 : day - 1; // Mon=0, Sun=6
@@ -144,15 +148,14 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
-// Auto-Resizing Textarea with Max Height Limit
+// Auto-Resizing Textarea
 const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   const textareaRef = useRef(null);
-
+  
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'; 
       const scrollHeight = textareaRef.current.scrollHeight;
-      // Clamp height to max 76px (parent is 80px)
       textareaRef.current.style.height = `${Math.min(scrollHeight, 76)}px`;
     }
   }, [value]);
@@ -172,9 +175,8 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
     const newHeight = target.scrollHeight;
     target.style.height = prevHeight; 
 
-    // Stop input if height exceeds limit
     if (newHeight > 76) {
-        return; 
+        return;
     }
     
     onChange(newVal);
@@ -193,9 +195,9 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   );
 };
 
+// Date Picker Modal
 const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark, t }) => {
   const [viewYear, setViewYear] = useState(currentYear);
-
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 ${isDark ? 'bg-slate-900/60' : 'bg-slate-900/20'}`} onClick={onClose}>
       <div 
@@ -241,6 +243,71 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
   );
 };
 
+// Day Card Modal (Expanded View)
+const DayCardModal = ({ dateKey, day, year, month, gridMode, records, notes, categories, onClose, onUpdateNote, isDark, t }) => {
+  const dayRecord = records[dateKey] || {};
+  const dayNotes = notes[dateKey] || {};
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 p-4" onClick={onClose}>
+      <div 
+        className={`w-full max-w-sm rounded-[32px] shadow-2xl transform transition-all scale-100 overflow-hidden flex flex-col max-h-[85vh]
+          ${isDark ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-white/60'}
+        `}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`px-6 py-4 border-b flex justify-between items-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+           <h3 className={`text-xl font-black tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+             {year}.{month + 1}.{day}
+           </h3>
+           <button onClick={onClose} className={`p-2 rounded-full transition-colors ${isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+             <X size={20} />
+           </button>
+        </div>
+
+        {/* Big Grid Content */}
+        <div className="p-4 flex-1 overflow-y-auto no-scrollbar">
+           <div className={`grid gap-3 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`} style={{ minHeight: '320px' }}>
+              {Array.from({ length: gridMode }).map((_, i) => {
+                  const colorId = dayRecord[i];
+                  const cat = categories.find(c => c.id === colorId);
+                  const style = cat ? COLOR_DEFINITIONS[cat.id] : null;
+                  
+                  // Use modalLight / modalDark for softer backgrounds
+                  const bgClass = style ? (isDark ? style.modalDark : style.modalLight) : (isDark ? 'bg-slate-800/50' : 'bg-slate-50');
+                  const borderClass = style ? (isDark ? style.borderDark : style.borderLight) : (isDark ? 'border-slate-700' : 'border-slate-200');
+                  
+                  return (
+                    <div key={i} className={`relative rounded-2xl border-2 flex flex-col p-3 transition-colors ${bgClass} ${borderClass}`}>
+                       {/* Label if colored */}
+                       {cat && (
+                         <div className={`text-[10px] font-bold uppercase mb-1 opacity-70 truncate ${isDark ? 'text-white' : 'text-black'}`}>
+                            {cat.defaultLabel}
+                         </div>
+                       )}
+                       
+                       {/* Text Input Area (No Scrollbar class added) */}
+                       <textarea
+                          className={`flex-1 w-full bg-transparent border-none resize-none outline-none text-sm leading-relaxed p-0 no-scrollbar
+                            ${style ? (isDark ? 'text-white placeholder-white/50' : 'text-slate-900 placeholder-slate-700/40') : (isDark ? 'text-slate-200 placeholder-slate-600' : 'text-slate-700 placeholder-slate-400')}
+                          `}
+                          placeholder={t.placeholderNote}
+                          value={dayNotes[i] || ''}
+                          onChange={(e) => onUpdateNote(dateKey, i, e.target.value)}
+                       />
+                       
+                    </div>
+                  )
+              })}
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Settings Modal
 const SettingsModal = ({ 
   onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue 
 }) => {
@@ -389,10 +456,9 @@ const SettingsModal = ({
   );
 };
 
-// --- Note Row Component ---
+// Note Row Component
 const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect, isDark, t }) => {
   const inputRef = useRef(null);
-
   return (
     <div 
       className={`group flex items-end gap-2 relative transition-all duration-200 
@@ -401,7 +467,7 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
         ${isSelected ? (isDark ? 'bg-blue-900/30 border-blue-800 ring-1 ring-blue-700' : 'bg-blue-50 border-blue-200 ring-1 ring-blue-300') + ' z-10' : ''}
       `}
       onClick={(e) => {
-        if (isReordering) {
+         if (isReordering) {
             e.stopPropagation();
             onReorderSelect(note.id);
         } else {
@@ -443,7 +509,7 @@ export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appTitle, setAppTitle] = useState('My Life Log');
   const [gridMode, setGridMode] = useState(4); 
-  const [view, setView] = useState('calendar'); 
+  const [view, setView] = useState('calendar');
   const [langIndex, setLangIndex] = useState(0); 
   
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -453,9 +519,11 @@ export default function NewCalendarApp() {
   const [darkMode, setDarkMode] = useState(false);
   
   const [records, setRecords] = useState({});
+  const [recordNotes, setRecordNotes] = useState({}); 
   const [weekNotes, setWeekNotes] = useState({});
   const [allFooterNotes, setAllFooterNotes] = useState({});
   
+  // Set default color back to first category
   const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
   
   const [editingCategoryId, setEditingCategoryId] = useState(null);
@@ -463,6 +531,8 @@ export default function NewCalendarApp() {
   
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
+  
+  const [expandedDate, setExpandedDate] = useState(null); 
 
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
@@ -518,7 +588,7 @@ export default function NewCalendarApp() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Persistence (FIXED)
+  // Persistence
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
       const saved = localStorage.getItem(`calendar_app_v70_${key}`);
@@ -532,6 +602,7 @@ export default function NewCalendarApp() {
     load('gridMode', setGridMode);
     load('categories', setCategories, INITIAL_CATEGORIES);
     load('records', setRecords);
+    load('recordNotes', setRecordNotes); 
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
@@ -559,13 +630,14 @@ export default function NewCalendarApp() {
     localStorage.setItem('calendar_app_v70_gridMode', JSON.stringify(gridMode));
     localStorage.setItem('calendar_app_v70_categories', JSON.stringify(categories));
     localStorage.setItem('calendar_app_v70_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v70_recordNotes', JSON.stringify(recordNotes)); 
     localStorage.setItem('calendar_app_v70_weekNotes', JSON.stringify(weekNotes));
     localStorage.setItem('calendar_app_v70_allFooterNotes', JSON.stringify(allFooterNotes));
     localStorage.setItem('calendar_app_v70_langIndex', JSON.stringify(langIndex));
     localStorage.setItem('calendar_app_v70_darkMode', JSON.stringify(darkMode));
     localStorage.setItem('calendar_app_v70_lastBackupDate', JSON.stringify(lastBackupDate));
     localStorage.setItem('calendar_app_v70_categoryOrder', JSON.stringify(categories.map(c => c.id)));
-  }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
+  }, [appTitle, gridMode, categories, records, recordNotes, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); 
@@ -575,7 +647,6 @@ export default function NewCalendarApp() {
 
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
   
-  // --- BACKUP REMINDER LOGIC ---
   const isBackupOverdue = useMemo(() => {
       if (!lastBackupDate) return false; 
       const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
@@ -583,14 +654,14 @@ export default function NewCalendarApp() {
       return diffDays > BACKUP_REMINDER_DAYS;
   }, [lastBackupDate]);
 
-  // --- Localization ---
-  const langKey = Object.keys(TRANSLATIONS)[langIndex]; // zh, jp, en
+  const langKey = Object.keys(TRANSLATIONS)[langIndex]; 
   const t = TRANSLATIONS[langKey];
   const currentWeekLabels = t.weekDays;
 
   // --- Handlers ---
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  
   const handleJumpToToday = (e) => {
     e.stopPropagation();
     setCurrentDate(new Date()); 
@@ -620,19 +691,29 @@ export default function NewCalendarApp() {
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
     
+    // Toggle logic: if clicked color is same as selected, remove it. Otherwise overwrite.
     if (currentColor === selectedColor) {
-      delete newRecord[subIndex]; 
+      delete newRecord[subIndex];
     } else {
-      newRecord[subIndex] = selectedColor; 
+      if (selectedColor) {
+          newRecord[subIndex] = selectedColor;
+      }
     }
     setRecords(prev => ({ ...prev, [dateKey]: newRecord }));
+  };
+
+  const handleUpdateRecordNote = (dateKey, subIndex, text) => {
+    setRecordNotes(prev => {
+      const dayNotes = prev[dateKey] || {};
+      const newDayNotes = { ...dayNotes, [subIndex]: text };
+      return { ...prev, [dateKey]: newDayNotes };
+    });
   };
 
   const updateCategoryLabel = (id, newLabel) => {
     setCategories(prev => prev.map(c => c.id === id ? { ...c, defaultLabel: newLabel } : c));
   };
   
-  // MODIFIED: Removed empty check to allow clearing the label
   const saveCategoryLabel = (id) => {
     updateCategoryLabel(id, tempLabel);
     setEditingCategoryId(null);
@@ -669,7 +750,7 @@ export default function NewCalendarApp() {
     const now = new Date().toISOString();
     setLastBackupDate(now);
     const data = {
-      appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex,
+      appTitle, gridMode, categories, records, recordNotes, weekNotes, allFooterNotes, langIndex,
       exportedAt: now
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -693,6 +774,7 @@ export default function NewCalendarApp() {
         if (data.gridMode) setGridMode(data.gridMode);
         if (data.categories) setCategories(data.categories);
         if (data.records) setRecords(data.records);
+        if (data.recordNotes) setRecordNotes(data.recordNotes);
         if (data.weekNotes) setWeekNotes(data.weekNotes);
         if (data.allFooterNotes) setAllFooterNotes(data.allFooterNotes);
         else if (data.footerNotes) {
@@ -722,7 +804,6 @@ export default function NewCalendarApp() {
 
   const handleItemSwap = (targetId, listType) => {
     if (!reorderMode || reorderMode !== listType) return;
-
     if (swapSourceId === null) {
       setSwapSourceId(targetId);
     } else if (swapSourceId === targetId) {
@@ -759,6 +840,7 @@ export default function NewCalendarApp() {
       days.push({ type: 'current', day: i, dateKey: formatDateKey(year, month, i) });
     }
     const totalCells = days.length;
+    
     // Auto height
     const nextMonthNeeded = (Math.ceil(totalCells / 7) * 7) - totalCells;
     for (let i = 1; i <= nextMonthNeeded; i++) {
@@ -783,7 +865,7 @@ export default function NewCalendarApp() {
       Object.keys(records).forEach(dateKey => {
         if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
         Object.values(records[dateKey]).forEach(colorId => {
-          if (counts[colorId] !== undefined) counts[colorId]++;
+           if (counts[colorId] !== undefined) counts[colorId]++;
         });
       });
       return counts;
@@ -814,7 +896,6 @@ export default function NewCalendarApp() {
     
     const currentCounts = calcCounts(currentMonthKey);
     const maxCount = Math.max(1, ...Object.values(currentCounts));
-
     return { 
       currentCounts, 
       prevCounts: calcCounts(prevMonthKey), 
@@ -841,9 +922,11 @@ export default function NewCalendarApp() {
 
     <div className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}>
       {/* Auto Height for Mobile Full View */}
-      <div className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]
+      <div 
+        className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]
          ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}
-      `}>
+        `}
+      >
         
         {/* Modals */}
         {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
@@ -860,13 +943,32 @@ export default function NewCalendarApp() {
                 isBackupOverdue={isBackupOverdue}
             />
         )}
-        
+
+        {/* Day Card Modal (Expanded View) */}
+        {expandedDate && (
+          <DayCardModal 
+             dateKey={expandedDate.dateKey}
+             day={expandedDate.day}
+             year={year}
+             month={month}
+             gridMode={gridMode}
+             records={records}
+             notes={recordNotes}
+             categories={categories}
+             onClose={() => setExpandedDate(null)}
+             onUpdateNote={handleUpdateRecordNote}
+             isDark={darkMode}
+             t={t}
+          />
+        )}
+      
         {/* Header Section */}
         <div className="pt-8 pb-2 px-5 flex justify-between items-start">
           <div className="flex flex-col items-start gap-0.5 flex-1">
             <input
               value={appTitle}
               onChange={(e) => setAppTitle(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               className={`text-2xl font-bold bg-transparent border-none focus:ring-0 p-0 w-full outline-none ${darkMode ? 'text-slate-100 placeholder-slate-600' : 'text-slate-800 placeholder-slate-300'}`}
               placeholder={t.titlePlaceholder}
             />
@@ -874,7 +976,7 @@ export default function NewCalendarApp() {
             <div className="flex items-center gap-2 mt-1">
                 <div 
                   className="group cursor-pointer flex items-center outline-none"
-                  onClick={() => setShowDatePicker(true)}
+                  onClick={(e) => { e.stopPropagation(); setShowDatePicker(true); }}
                 >
                    <h2 className={`text-lg font-medium transition-colors ${darkMode ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>
                      {year}.{month + 1}
@@ -895,21 +997,32 @@ export default function NewCalendarApp() {
 
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-              <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setGridMode(prev => prev === 4 ? 6 : 4); }} 
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}
+              >
                 {gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}
               </button>
-              <button onClick={toggleDarkMode} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); toggleDarkMode(); }} 
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}
+              >
                  {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setView(view === 'calendar' ? 'stats' : 'calendar')} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 border outline-none ${view === 'stats' ? (darkMode ? 'bg-slate-100 text-slate-900 border-slate-100' : 'bg-slate-800 text-white border-slate-800') : (darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-700' : 'bg-slate-50 text-slate-400 hover:text-slate-600 border-transparent hover:bg-slate-100 hover:border-slate-200')}`}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setView(view === 'calendar' ? 'stats' : 'calendar'); }} 
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 border outline-none ${view === 'stats' ? (darkMode ? 'bg-slate-100 text-slate-900 border-slate-100' : 'bg-slate-800 text-white border-slate-800') : (darkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-700' : 'bg-slate-50 text-slate-400 hover:text-slate-600 border-transparent hover:bg-slate-100 hover:border-slate-200')}`}
+              >
                 <BarChart2 size={18} />
               </button>
               
-              <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none relative ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} 
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none relative ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}
+              >
                 <Settings size={18} />
-                {/* BACKUP REMINDER DOT */}
                 {isBackupOverdue && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm animate-pulse"></span>
                 )}
@@ -927,7 +1040,7 @@ export default function NewCalendarApp() {
               <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
                   {/* Calendar Header */}
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
-                     <div className="grid grid-cols-7 gap-1">
+                      <div className="grid grid-cols-7 gap-1">
                         {currentWeekLabels.map((day, i) => (
                           <div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>
                         ))}
@@ -940,83 +1053,108 @@ export default function NewCalendarApp() {
                   <div className="flex flex-col gap-1">
                     {weeks.map((week, weekIndex) => (
                       <div key={weekIndex} className="flex gap-1">
-                        <div className="grid grid-cols-7 gap-1 flex-1">
+                         <div className="grid grid-cols-7 gap-1 flex-1">
                           {week.map((cell, dayIndex) => {
-                            if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />; 
-                            
+                            if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />;
                             const isCurrent = cell.type === 'current';
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
-                            
-                            const subCells = [];
+                            const hasNotes = recordNotes[cell.dateKey] && Object.values(recordNotes[cell.dateKey]).some(v => v);
                             const cellRecord = records[cell.dateKey] || {};
                             
-                            for (let i = 0; i < gridMode; i++) {
-                               const colorId = cellRecord[i];
-                               // Safety: Ensure category exists before lookup
-                               const activeCatState = categories?.find(c => c.id === colorId);
-                               const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
-                               const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
+                            // LONG PRESS LOGIC
+                            const pressTimer = useRef(null);
+                            const isLongPress = useRef(false);
 
-                               subCells.push(
-                                 <div 
+                            const startPress = () => {
+                                isLongPress.current = false;
+                                pressTimer.current = setTimeout(() => {
+                                    isLongPress.current = true;
+                                    setExpandedDate({ dateKey: cell.dateKey, day: cell.day });
+                                }, 500); // 500ms for long press
+                            };
+
+                            const endPress = (subIndex) => {
+                                clearTimeout(pressTimer.current);
+                                if (!isLongPress.current) {
+                                    if(subIndex !== -1) { 
+                                        handleCellClick(cell.dateKey, subIndex);
+                                    }
+                                }
+                            };
+
+                            // Subcells
+                            const subCells = Array.from({ length: gridMode }).map((_, i) => {
+                                const colorId = cellRecord[i];
+                                const activeCatState = categories?.find(c => c.id === colorId);
+                                const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
+                                const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
+                                
+                                return (
+                                  <div 
                                     key={i} 
-                                    onClick={(e) => {
-                                       if (!isCurrent) return;
-                                       e.stopPropagation();
-                                       handleCellClick(cell.dateKey, i);
-                                    }}
-                                    className={`
-                                      relative w-full h-full cursor-pointer outline-none hoverable
-                                      ${finalColor} hover:opacity-80
-                                    `}
-                                 >
-                                    {/* Increased Visibility Grid Lines */}
+                                    onMouseDown={startPress}
+                                    onMouseUp={() => endPress(i)}
+                                    onTouchStart={startPress}
+                                    onTouchEnd={(e) => { e.preventDefault(); endPress(i); }}
+                                    className={`relative w-full h-full outline-none hoverable ${finalColor} hover:opacity-80`}
+                                  >
                                     <div className={`absolute inset-0 pointer-events-none 
-                                       ${darkMode ? 'border-slate-600' : 'border-slate-300'}
-                                       ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
-                                       ${gridMode === 4 && i === 1 ? 'border-b-[0.5px]' : ''}
-                                       ${gridMode === 4 && i === 2 ? 'border-r-[0.5px]' : ''}
-                                       
-                                       ${gridMode === 6 && (i === 0 || i === 1) ? 'border-r-[0.5px] border-b-[0.5px]' : ''}
-                                       ${gridMode === 6 && i === 2 ? 'border-b-[0.5px]' : ''}
-                                       ${gridMode === 6 && (i === 3 || i === 4) ? 'border-r-[0.5px]' : ''}
+                                       ${darkMode ? 'border-slate-500' : 'border-slate-400/70'}
+                                       ${gridMode === 4 && i === 0 ? 'border-r border-b' : ''}
+                                       ${gridMode === 4 && i === 1 ? 'border-b' : ''}
+                                       ${gridMode === 4 && i === 2 ? 'border-r' : ''}
+                                       ${gridMode === 6 && (i === 0 || i === 1) ? 'border-r border-b' : ''}
+                                       ${gridMode === 6 && i === 2 ? 'border-b' : ''}
+                                       ${gridMode === 6 && (i === 3 || i === 4) ? 'border-r' : ''}
                                     `}></div>
-                                 </div>
-                               );
-                            }
+                                  </div>
+                                );
+                            });
 
                             return (
-                              <div key={dayIndex} 
-                                   className={`
-                                     relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors
+                              <div key={dayIndex} className="relative h-20 cursor-pointer group">
+                                 {/* Inner Content Card */}
+                                 <div className={`
+                                     absolute inset-0 rounded-lg overflow-hidden flex flex-col transition-colors
                                      ${isCurrent 
-                                        ? (darkMode ? 'bg-slate-800 border border-slate-500' : 'bg-white border border-slate-400')
-                                        : (darkMode ? 'bg-slate-800/30 border border-slate-800 opacity-40' : 'bg-white/50 border border-slate-200 opacity-40')
+                                        ? (darkMode ? 'bg-slate-800 border-2 border-slate-500' : 'bg-white border-2 border-slate-400')
+                                        : (darkMode ? 'bg-slate-800/30 border-2 border-slate-800 opacity-40' : 'bg-white/50 border-2 border-slate-200 opacity-40')
                                      }
-                                   `}>
-                                 <div className={`flex-1 grid ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>
-                                    {subCells}
+                                 `}>
+                                     {/* Subcells Container */}
+                                     <div className={`flex-1 grid ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>
+                                         {subCells}
+                                     </div>
+
+                                     {/* Date Number - Simple Text Only (No Circle/Shadow) */}
+                                     <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-10 flex items-center gap-0.5">
+                                       <span className={`
+                                         text-[10px] font-bold flex items-center justify-center w-5 h-5 rounded-full transition-all
+                                         ${isTodayDate 
+                                            ? (darkMode ? 'bg-slate-100 text-slate-900 shadow-sm' : 'bg-slate-800 text-white shadow-sm')
+                                            : (darkMode ? 'text-slate-300' : 'text-slate-600')
+                                         }
+                                       `}>
+                                         {cell.day}
+                                       </span>
+                                     </div>
                                  </div>
-                                 <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-10">
-                                   <span className={`
-                                     text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all
-                                     ${isTodayDate 
-                                        ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white')
-                                        : (darkMode ? 'text-slate-400' : 'text-slate-500')
-                                     }
-                                   `}>
-                                     {cell.day}
-                                   </span>
-                                 </div>
+                                 
+                                 {/* NOTE INDICATOR: Solid White in Dark Mode */}
+                                 {hasNotes && !isTodayDate && (
+                                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-5 h-[3px] z-20 pointer-events-none">
+                                        <div className={`w-full h-full rounded-full ${darkMode ? 'bg-white' : 'bg-slate-600'}`}></div>
+                                     </div>
+                                 )}
                               </div>
                             );
-                          })}
+                        })}
                         </div>
                         
-                        {/* FIX: Week Note Container - Revert to narrow width (w-8), remove borders */}
                         <div 
                           className={`w-8 flex flex-col items-center justify-center h-20 cursor-text overflow-hidden`}
                           onClick={(e) => {
+                             e.stopPropagation(); 
                              const textarea = e.currentTarget.querySelector('textarea');
                              if(textarea) textarea.focus();
                           }}
@@ -1036,14 +1174,13 @@ export default function NewCalendarApp() {
               {/* Color Palette */}
               <div className="mt-6 px-1">
                  <div className="flex items-center justify-start gap-2 mb-3">
-                    {/* OPTIMIZED: Darkened Header Text & Added Hint */}
                     <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                         {t.categoryHeader} 
                         <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span>
                     </h3>
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => toggleReorderMode('color')}
+                        onClick={(e) => { e.stopPropagation(); toggleReorderMode('color'); }}
                         className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
                       >
                         <ArrowRightLeft size={14} />
@@ -1061,8 +1198,14 @@ export default function NewCalendarApp() {
                       return (
                       <div 
                         key={cat.id} 
-                        onClick={() => reorderMode === 'color' ? handleItemSwap(cat.id, 'color') : setSelectedColor(cat.id)}
-                        // FIX: Move double click here to ensure empty labels are clickable via the container
+                        onClick={(e) => {
+                            e.stopPropagation(); 
+                            if (reorderMode === 'color') {
+                                handleItemSwap(cat.id, 'color');
+                            } else {
+                                setSelectedColor(cat.id);
+                            }
+                        }}
                         onDoubleClick={(e) => {
                             if(!reorderMode) {
                               e.stopPropagation();
@@ -1090,7 +1233,6 @@ export default function NewCalendarApp() {
                              className={`w-full text-xs border-b focus:ring-0 p-0 font-medium outline-none ${darkMode ? 'text-slate-100 bg-slate-800 border-blue-500' : 'text-slate-800 bg-white border-blue-500'}`}
                            />
                          ) : (
-                           // OPTIMIZED: Text color darkened to slate-700 (light mode)
                            <span 
                              className={`w-full text-xs font-medium truncate min-h-[16px] block ${darkMode ? 'text-slate-200' : 'text-slate-700'} ${reorderMode ? 'pointer-events-none' : ''}`}
                              title="雙擊編輯"
@@ -1106,15 +1248,14 @@ export default function NewCalendarApp() {
               {/* Footer Notes */}
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
-                   <div className="flex items-center gap-2">
-                      {/* OPTIMIZED: Darkened Header Text & Added Hint */}
+                    <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                         {memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span>
                       </h3>
                       
                       <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => toggleReorderMode('note')}
+                          onClick={(e) => { e.stopPropagation(); toggleReorderMode('note'); }}
                           className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
                         >
                           <ArrowRightLeft size={14} />
@@ -1126,12 +1267,12 @@ export default function NewCalendarApp() {
                         )}
                       </div>
                    </div>
-                   <button onClick={handleAddNote} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}>
+                   <button onClick={(e) => { e.stopPropagation(); handleAddNote(); }} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}>
                      <Plus size={12} />
                    </button>
                  </div>
                  <div className="space-y-4">
-                    {footerNotes.map((note, idx) => (
+                     {footerNotes.map((note, idx) => (
                       <NoteRow 
                         key={note.id} 
                         note={note} 
@@ -1148,9 +1289,8 @@ export default function NewCalendarApp() {
               </div>
             </>
           ) : (
-            // --- Statistics View (FINAL V71 - Single Column Vertical List) ---
+            // --- Statistics View ---
             <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2">
-               {/* Use flex-1 on items to distribute height evenly in full container height */}
                <div className="flex flex-col h-full gap-2">
                  {categories.map((cat) => {
                     const current = stats.currentCounts[cat.id];
@@ -1180,7 +1320,6 @@ export default function NewCalendarApp() {
                     return (
                       <div key={cat.id} className={`flex-1 w-full p-3 rounded-2xl border ${darkMode ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-white/60'} shadow-sm flex items-center justify-between gap-4`}>
                          
-                         {/* LEFT: Label & Big Number */}
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
                             <div className="flex items-center gap-1.5 mb-1">
                                <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
@@ -1192,9 +1331,7 @@ export default function NewCalendarApp() {
                             <span className={`text-[9px] font-medium mt-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsMonthCount}</span>
                          </div>
 
-                         {/* RIGHT: Detailed Stats & Bar */}
                          <div className="flex-1 flex flex-col justify-center gap-1.5">
-                            {/* Top Stats Line */}
                             <div className="flex justify-between items-end">
                                <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                   {t.statsFreq}: {freqText}
@@ -1204,7 +1341,6 @@ export default function NewCalendarApp() {
                                </span>
                             </div>
                             
-                            {/* Bar */}
                             <div className={`h-1.5 w-full rounded-full overflow-hidden relative ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}>
                                 <div 
                                    className={`h-full rounded-full transition-all duration-500 ease-out ${darkMode ? style.dark : style.light}`}
@@ -1212,12 +1348,11 @@ export default function NewCalendarApp() {
                                 ></div>
                             </div>
 
-                            {/* Bottom Total Line */}
                             <div className="flex justify-end items-center">
                                 <span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                    {t.statsTotal}: {stats.totalCounts[cat.id]}
                                    {rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}
-                                </span>
+                                 </span>
                             </div>
                          </div>
                       </div>
