@@ -50,7 +50,7 @@ const TRANSLATIONS = {
     swapHint: '點擊以交換順序',
     categoryHeader: 'Categories',
     memoHeader: 'Memo',
-    editHint: '(雙擊文字編輯)', // Added instruction
+    editHint: '(雙擊文字編輯)',
     statsFreq: '頻率',
     statsTotal: '總計',
     statsMonthCount: '本月次數',
@@ -80,7 +80,7 @@ const TRANSLATIONS = {
     swapHint: 'タップして順序を入れ替え',
     categoryHeader: 'カテゴリー',
     memoHeader: 'メモ',
-    editHint: '(ダブルクリックで編集)', // Added instruction
+    editHint: '(ダブルクリックで編集)',
     statsFreq: '頻度',
     statsTotal: '累計',
     statsMonthCount: '今月の回数',
@@ -110,7 +110,7 @@ const TRANSLATIONS = {
     swapHint: 'Click to swap',
     categoryHeader: 'Categories',
     memoHeader: 'Memo',
-    editHint: '(Double click to edit)', // Added instruction
+    editHint: '(Double click to edit)',
     statsFreq: 'Freq',
     statsTotal: 'Total',
     statsMonthCount: 'Month Count',
@@ -367,8 +367,9 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
          value={note.text}
          onChange={onChange}
          onTouchStart={(e) => !isReordering && e.stopPropagation()}
+         // OPTIMIZED: Darkened text color (slate-900) and placeholder (slate-400)
          className={`flex-1 text-sm bg-transparent border-b focus:ring-0 px-3 pb-2 transition-all outline-none 
-            ${isDark ? 'text-slate-200 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-700 border-slate-200 focus:border-slate-400 placeholder:text-slate-300'} 
+            ${isDark ? 'text-slate-100 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-900 border-slate-200 focus:border-slate-400 placeholder:text-slate-400'} 
             ${isReordering ? 'pointer-events-none' : ''}`}
          placeholder={isReordering ? t.swapHint : t.placeholderNote}
          readOnly={isReordering}
@@ -980,7 +981,8 @@ export default function NewCalendarApp() {
               {/* Color Palette */}
               <div className="mt-6 px-1">
                  <div className="flex items-center justify-start gap-2 mb-3">
-                    <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>
+                    {/* OPTIMIZED: Darkened Header Text & Added Hint */}
+                    <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                         {t.categoryHeader} 
                         <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span>
                     </h3>
@@ -1033,8 +1035,9 @@ export default function NewCalendarApp() {
                              className={`w-full text-xs border-b focus:ring-0 p-0 font-medium outline-none ${darkMode ? 'text-slate-100 bg-slate-800 border-blue-500' : 'text-slate-800 bg-white border-blue-500'}`}
                            />
                          ) : (
+                           // OPTIMIZED: Text color darkened to slate-700 (light mode)
                            <span 
-                             className={`w-full text-xs font-medium truncate min-h-[16px] block ${darkMode ? 'text-slate-300' : 'text-slate-600'} ${reorderMode ? 'pointer-events-none' : ''}`}
+                             className={`w-full text-xs font-medium truncate min-h-[16px] block ${darkMode ? 'text-slate-200' : 'text-slate-700'} ${reorderMode ? 'pointer-events-none' : ''}`}
                              title="雙擊編輯"
                            >
                              {cat.defaultLabel}
@@ -1049,8 +1052,8 @@ export default function NewCalendarApp() {
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
-                      {/* CHANGED: Memo header format */}
-                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>
+                      {/* OPTIMIZED: Darkened Header Text & Added Hint */}
+                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                         {memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span>
                       </h3>
                       
