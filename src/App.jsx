@@ -963,13 +963,14 @@ export default function NewCalendarApp() {
                             );
                           })}
                         </div>
-                        {/* REPLACED INPUT WITH TEXTAREA */}
+                        {/* FIX: VERTICAL CENTERED TEXTAREA */}
                         <div className="w-8 flex flex-col items-center justify-center h-20">
                            <textarea 
                               value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''}
                               onChange={(e) => setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: e.target.value})}
                               placeholder={`W${weekIndex + 1}`}
-                              className={`w-full h-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0.5 rounded transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-words ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
+                              rows={3}
+                              className={`w-full h-auto text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-words ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
                            />
                         </div>
                       </div>
@@ -1127,8 +1128,8 @@ export default function NewCalendarApp() {
                          {/* LEFT: Label & Big Number */}
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
                             <div className="flex items-center gap-1.5 mb-1">
-                               <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
-                               <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+                                <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
+                                <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
                             </div>
                             <span className={`text-4xl font-black leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                                {current}
