@@ -54,6 +54,7 @@ const TRANSLATIONS = {
     today: 'Today',
     settingsTitle: '設定與資料',
     lastBackup: '上次: ',
+    neverBackedUp: '尚未備份',
     backupOverdue: '建議立即匯出備份',
     switchLang: '切換語言',
     export: '匯出資料備份',
@@ -61,6 +62,7 @@ const TRANSLATIONS = {
     resetMonth: '重置本月紀錄',
     confirmResetTitle: '確定重置？',
     confirmResetMsg: '將清除本月所有打卡紀錄。<br/>此動作無法復原。',
+    resetKeepNotesHint: '僅重置當月曆打卡記錄，當月筆記不會重置',
     cancel: '取消',
     confirm: '確認重置',
     placeholderNote: '寫點什麼...',
@@ -81,6 +83,7 @@ const TRANSLATIONS = {
     today: '今日',
     settingsTitle: '設定とデータ',
     lastBackup: '前回: ',
+    neverBackedUp: '未バックアップ',
     backupOverdue: 'バックアップ推奨',
     switchLang: '言語切り替え',
     export: 'バックアップを保存',
@@ -88,6 +91,7 @@ const TRANSLATIONS = {
     resetMonth: '今月の記録をリセット',
     confirmResetTitle: 'リセットしますか？',
     confirmResetMsg: '今月の全ての記録が消去されます。<br/>この操作は取り消せません。',
+    resetKeepNotesHint: 'カレンダーの記録のみリセットされます。メモは保持されます。',
     cancel: 'キャンセル',
     confirm: 'リセット',
     placeholderNote: 'メモを入力...',
@@ -108,6 +112,7 @@ const TRANSLATIONS = {
     today: 'Today',
     settingsTitle: 'Settings & Data',
     lastBackup: 'Last: ',
+    neverBackedUp: 'Never',
     backupOverdue: 'Backup Recommended',
     switchLang: 'Language',
     export: 'Export Backup',
@@ -115,6 +120,7 @@ const TRANSLATIONS = {
     resetMonth: 'Reset Month',
     confirmResetTitle: 'Reset Month?',
     confirmResetMsg: 'This will clear all records for this month.<br/>Cannot be undone.',
+    resetKeepNotesHint: 'Only calendar records are reset. Notes remain.',
     cancel: 'Cancel',
     confirm: 'Reset',
     placeholderNote: 'Write something...',
@@ -226,7 +232,7 @@ const SettingsModal = ({
     ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
     : 'bg-red-50 hover:bg-red-100 text-red-600';
   
-  let formattedLastBackup = 'N/A';
+  let formattedLastBackup = t.neverBackedUp;
   try {
       if (lastBackupDate) {
           const date = new Date(lastBackupDate);
@@ -248,6 +254,11 @@ const SettingsModal = ({
               </div>
               <h3 className={`text-lg font-bold ${titleClass}`}>{t.confirmResetTitle}</h3>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
+              
+              {/* New Hint Added Here */}
+              <p className={`text-[10px] bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                 {t.resetKeepNotesHint}
+              </p>
            </div>
            
            <div className="flex gap-3">
@@ -280,11 +291,11 @@ const SettingsModal = ({
         </div>
         
         <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs 
-            ${isBackupOverdue 
+            ${isBackupOverdue && lastBackupDate 
               ? (isDark ? 'bg-red-900/20 text-red-400 ring-1 ring-red-900/50' : 'bg-red-50 text-red-600 ring-1 ring-red-200') 
               : (isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500')}
         `}>
-             {isBackupOverdue ? <AlertTriangle size={14} /> : <Clock size={14} />}
+             {isBackupOverdue && lastBackupDate ? <AlertTriangle size={14} /> : <Clock size={14} />}
              <span className="font-medium">{t.lastBackup}{formattedLastBackup}</span>
         </div>
         
@@ -302,13 +313,13 @@ const SettingsModal = ({
 
           <button 
             onClick={onExport}
-            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue ? (isDark ? 'ring-1 ring-red-400/50 bg-red-900/20 text-red-300' : 'ring-1 ring-red-400 bg-red-50 text-red-600') : buttonClass}`}
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue && lastBackupDate ? (isDark ? 'ring-1 ring-red-400/50 bg-red-900/20 text-red-300' : 'ring-1 ring-red-400 bg-red-50 text-red-600') : buttonClass}`}
           >
             <div className={`p-2 rounded-xl group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm ${iconBgClass}`}>
-               <Download size={18} className={isBackupOverdue ? (isDark ? 'text-red-400' : 'text-red-500') : ''} />
+               <Download size={18} className={isBackupOverdue && lastBackupDate ? (isDark ? 'text-red-400' : 'text-red-500') : ''} />
             </div>
-            <span className={`text-sm font-medium ${isBackupOverdue ? 'font-bold' : ''}`}>
-                {isBackupOverdue ? t.backupOverdue : t.export}
+            <span className={`text-sm font-medium ${isBackupOverdue && lastBackupDate ? 'font-bold' : ''}`}>
+                {isBackupOverdue && lastBackupDate ? t.backupOverdue : t.export}
             </span>
           </button>
 
@@ -537,7 +548,7 @@ export default function NewCalendarApp() {
   
   // --- BACKUP REMINDER LOGIC ---
   const isBackupOverdue = useMemo(() => {
-      if (!lastBackupDate) return true; 
+      if (!lastBackupDate) return false; 
       const diffTime = Math.abs(new Date() - new Date(lastBackupDate));
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
       return diffDays > BACKUP_REMINDER_DAYS;
@@ -817,14 +828,6 @@ export default function NewCalendarApp() {
             />
         )}
         
-        {/* Reorder Hint */}
-        {reorderMode && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-in fade-in flex items-center gap-2">
-             <ArrowRightLeft size={14} />
-             <span>{t.swapHint}</span>
-          </div>
-        )}
-
         {/* Header Section */}
         <div className="pt-8 pb-2 px-5 flex justify-between items-start">
           <div className="flex flex-col items-start gap-0.5 flex-1">
@@ -841,7 +844,7 @@ export default function NewCalendarApp() {
                   onClick={() => setShowDatePicker(true)}
                 >
                    <h2 className={`text-lg font-medium transition-colors ${darkMode ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>
-                     {year}年 {month + 1}月
+                     {year} {month + 1}
                    </h2>
                 </div>
                 
@@ -874,7 +877,7 @@ export default function NewCalendarApp() {
               <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none relative ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 <Settings size={18} />
                 {/* BACKUP REMINDER DOT */}
-                {isBackupOverdue && (
+                {isBackupOverdue && lastBackupDate && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm animate-pulse"></span>
                 )}
               </button>
@@ -993,12 +996,19 @@ export default function NewCalendarApp() {
               <div className="mt-6 px-1">
                  <div className="flex items-center justify-start gap-2 mb-3">
                     <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.categoryHeader}</h3>
-                    <button 
-                      onClick={() => toggleReorderMode('color')}
-                      className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
-                    >
-                      <ArrowRightLeft size={14} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => toggleReorderMode('color')}
+                        className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
+                      >
+                        <ArrowRightLeft size={14} />
+                      </button>
+                      {reorderMode === 'color' && (
+                        <span className={`text-xs font-medium animate-in fade-in slide-in-from-left-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                          {t.swapHint}
+                        </span>
+                      )}
+                    </div>
                  </div>
                  <div className="grid grid-cols-3 gap-3">
                     {categories.map((cat) => {
@@ -1051,13 +1061,20 @@ export default function NewCalendarApp() {
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
-                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.memoHeader} ({month + 1}月)</h3>
-                      <button 
-                        onClick={() => toggleReorderMode('note')}
-                        className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
-                      >
-                        <ArrowRightLeft size={14} />
-                      </button>
+                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.memoHeader} ({month + 1}{t.monthSuffix})</h3>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => toggleReorderMode('note')}
+                          className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
+                        >
+                          <ArrowRightLeft size={14} />
+                        </button>
+                        {reorderMode === 'note' && (
+                          <span className={`text-xs font-medium animate-in fade-in slide-in-from-left-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {t.swapHint}
+                          </span>
+                        )}
+                      </div>
                    </div>
                    <button onClick={handleAddNote} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}>
                      <Plus size={12} />
