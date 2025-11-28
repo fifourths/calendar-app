@@ -26,7 +26,6 @@ const INITIAL_CATEGORIES = [
   { id: 'purple', defaultLabel: '休閒' },
 ];
 
-// --- Translation System ---
 const TRANSLATIONS = {
   zh: {
     weekDays: ['一', '二', '三', '四', '五', '六', '日'],
@@ -144,6 +143,55 @@ const formatDateKey = (year, month, day) => {
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
 // --- 3. Sub-Components ---
+
+// Auto-Resizing Textarea with Max Height Limit
+const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; 
+      const scrollHeight = textareaRef.current.scrollHeight;
+      // Clamp height to max 76px (parent is 80px)
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 76)}px`;
+    }
+  }, [value]);
+
+  const handleChange = (e) => {
+    const newVal = e.target.value;
+    const oldVal = value || '';
+    
+    if (newVal.length < oldVal.length) {
+        onChange(newVal);
+        return;
+    }
+
+    const target = e.target;
+    const prevHeight = target.style.height;
+    target.style.height = 'auto';
+    const newHeight = target.scrollHeight;
+    target.style.height = prevHeight; 
+
+    // Stop input if height exceeds limit
+    if (newHeight > 76) {
+        return; 
+    }
+    
+    onChange(newVal);
+  };
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={handleChange}
+      placeholder={placeholder}
+      rows={1}
+      className={`w-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-all ${isDark ? 'text-slate-400 placeholder-slate-700' : 'text-slate-600 placeholder-slate-200'}`}
+      style={{ height: 'auto' }}
+    />
+  );
+};
 
 const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark, t }) => {
   const [viewYear, setViewYear] = useState(currentYear);
@@ -884,6 +932,7 @@ export default function NewCalendarApp() {
                           <div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>
                         ))}
                      </div>
+                     {/* SPACER FOR WEEK COLUMN HEADER */}
                      <div className="w-8"></div>
                   </div>
 
@@ -964,36 +1013,19 @@ export default function NewCalendarApp() {
                           })}
                         </div>
                         
-                        {/* FIX: Parent click focus + Centered Textarea + Stop on Full */}
+                        {/* FIX: Week Note Container - Revert to narrow width (w-8), remove borders */}
                         <div 
-                          className="w-8 flex flex-col items-center justify-center h-20 cursor-text"
+                          className={`w-8 flex flex-col items-center justify-center h-20 cursor-text overflow-hidden`}
                           onClick={(e) => {
-                             // Proxy click to textarea
                              const textarea = e.currentTarget.querySelector('textarea');
                              if(textarea) textarea.focus();
                           }}
                         >
-                           <textarea 
+                           <AutoResizingTextarea 
                               value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''}
-                              onChange={(e) => {
-                                  const newVal = e.target.value;
-                                  const oldVal = weekNotes[`${year}-${month}-W${weekIndex}`] || '';
-                                  
-                                  // Always allow delete
-                                  if (newVal.length < oldVal.length) {
-                                      setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: newVal});
-                                      return;
-                                  }
-                                  
-                                  // Check overflow (parent h-20 is 80px, allow 78px safety margin)
-                                  if (e.target.scrollHeight > 78) {
-                                      return;
-                                  }
-                                  setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: newVal});
-                              }}
+                              onChange={(val) => setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: val})}
                               placeholder={`W${weekIndex + 1}`}
-                              rows={1}
-                              className={`w-full h-auto max-h-[78px] text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-words ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
+                              isDark={darkMode}
                            />
                         </div>
                       </div>
