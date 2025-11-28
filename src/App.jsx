@@ -8,7 +8,6 @@ import {
 
 // --- 1. Constants & Config ---
 
-// Robust Dark Mode Color Definitions
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
   orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', borderLight: 'border-orange-300', borderDark: 'border-orange-500/50', textLight: 'text-orange-500', textDark: 'text-orange-300' },
@@ -408,7 +407,6 @@ export default function NewCalendarApp() {
   
   const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
   
-  // FIX: Separate editing state and temp text state
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [tempLabel, setTempLabel] = useState('');
   
@@ -469,7 +467,7 @@ export default function NewCalendarApp() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Persistence
+  // Persistence (FIXED)
   useEffect(() => {
     const load = (key, setter, defaultVal) => {
       const saved = localStorage.getItem(`calendar_app_v70_${key}`);
@@ -481,19 +479,16 @@ export default function NewCalendarApp() {
     };
     load('title', setAppTitle);
     load('gridMode', setGridMode);
+    // Modified: Directly load categories (which contains order and labels), do not use separate order logic to overwrite labels
     load('categories', setCategories, INITIAL_CATEGORIES);
     load('records', setRecords);
     load('weekNotes', setWeekNotes);
     load('langIndex', setLangIndex);
     load('darkMode', setDarkMode, false);
     load('lastBackupDate', setLastBackupDate, null);
-    load('categoryOrder', (order) => {
-       if(order && Array.isArray(order)) {
-           const ordered = order.map(id => categories.find(c => c.id === id)).filter(Boolean);
-           if(ordered.length === categories.length) setCategories(ordered);
-       }
-    });
-
+    
+    // REMOVED: The conflicting 'categoryOrder' loader that was resetting labels
+    
     const savedNewNotes = localStorage.getItem('calendar_app_v70_allFooterNotes');
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
@@ -521,6 +516,7 @@ export default function NewCalendarApp() {
     localStorage.setItem('calendar_app_v70_langIndex', JSON.stringify(langIndex));
     localStorage.setItem('calendar_app_v70_darkMode', JSON.stringify(darkMode));
     localStorage.setItem('calendar_app_v70_lastBackupDate', JSON.stringify(lastBackupDate));
+    // Kept for legacy compatibility, but not used for loading labels anymore
     localStorage.setItem('calendar_app_v70_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
@@ -589,7 +585,6 @@ export default function NewCalendarApp() {
     setCategories(prev => prev.map(c => c.id === id ? { ...c, defaultLabel: newLabel } : c));
   };
   
-  // New handler to commit changes only when done editing
   const saveCategoryLabel = (id) => {
     if (tempLabel.trim() !== '') {
         updateCategoryLabel(id, tempLabel);
