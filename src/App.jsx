@@ -45,10 +45,89 @@ const INITIAL_CATEGORIES = [
   { id: 'purple', defaultLabel: '休閒' },
 ];
 
-const WEEK_LABELS = {
-  zh: ['一', '二', '三', '四', '五', '六', '日'],
-  jp: ['月', '火', '水', '木', '金', '土', '日'],
-  en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+// --- Translation System ---
+const TRANSLATIONS = {
+  zh: {
+    weekDays: ['一', '二', '三', '四', '五', '六', '日'],
+    langName: '繁體中文',
+    titlePlaceholder: '自定義標題',
+    today: 'Today',
+    settingsTitle: '設定與資料',
+    lastBackup: '上次: ',
+    backupOverdue: '建議立即匯出備份',
+    switchLang: '切換語言',
+    export: '匯出資料備份',
+    import: '匯入資料',
+    resetMonth: '重置本月紀錄',
+    confirmResetTitle: '確定重置？',
+    confirmResetMsg: '將清除本月所有打卡紀錄。<br/>此動作無法復原。',
+    cancel: '取消',
+    confirm: '確認重置',
+    placeholderNote: '寫點什麼...',
+    swapHint: '點擊以交換順序',
+    categoryHeader: 'Categories',
+    memoHeader: 'Memo',
+    statsFreq: '頻率',
+    statsTotal: '總計',
+    statsMonthCount: '本月次數',
+    statsVsLast: 'vs 上月',
+    perMonth: '/ 月',
+    monthSuffix: '月'
+  },
+  jp: {
+    weekDays: ['月', '火', '水', '木', '金', '土', '日'],
+    langName: '日本語',
+    titlePlaceholder: 'タイトルを入力',
+    today: '今日',
+    settingsTitle: '設定とデータ',
+    lastBackup: '前回: ',
+    backupOverdue: 'バックアップ推奨',
+    switchLang: '言語切り替え',
+    export: 'バックアップを保存',
+    import: 'データを復元',
+    resetMonth: '今月の記録をリセット',
+    confirmResetTitle: 'リセットしますか？',
+    confirmResetMsg: '今月の全ての記録が消去されます。<br/>この操作は取り消せません。',
+    cancel: 'キャンセル',
+    confirm: 'リセット',
+    placeholderNote: 'メモを入力...',
+    swapHint: 'タップして順序を入れ替え',
+    categoryHeader: 'カテゴリー',
+    memoHeader: 'メモ',
+    statsFreq: '頻度',
+    statsTotal: '累計',
+    statsMonthCount: '今月の回数',
+    statsVsLast: '先月比',
+    perMonth: '/ 月',
+    monthSuffix: '月'
+  },
+  en: {
+    weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    langName: 'English',
+    titlePlaceholder: 'Custom Title',
+    today: 'Today',
+    settingsTitle: 'Settings & Data',
+    lastBackup: 'Last: ',
+    backupOverdue: 'Backup Recommended',
+    switchLang: 'Language',
+    export: 'Export Backup',
+    import: 'Import Data',
+    resetMonth: 'Reset Month',
+    confirmResetTitle: 'Reset Month?',
+    confirmResetMsg: 'This will clear all records for this month.<br/>Cannot be undone.',
+    cancel: 'Cancel',
+    confirm: 'Reset',
+    placeholderNote: 'Write something...',
+    swapHint: 'Click to swap',
+    categoryHeader: 'Categories',
+    memoHeader: 'Memo',
+    statsFreq: 'Freq',
+    statsTotal: 'Total',
+    statsMonthCount: 'Month Count',
+    statsVsLast: 'vs Last',
+    perMonth: '/ mo',
+    monthSuffix: ''
+  }
 };
 
 const DEFAULT_NOTES = [
@@ -75,7 +154,7 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
-const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark }) => {
+const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark, t }) => {
   const [viewYear, setViewYear] = useState(currentYear);
 
   return (
@@ -114,7 +193,7 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
                   : (isDark ? 'bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-slate-200 hover:scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 hover:scale-105')}
               `}
             >
-              {i + 1}月
+              {i + 1}{t.monthSuffix}
             </button>
           ))}
         </div>
@@ -124,7 +203,7 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
 };
 
 const SettingsModal = ({ 
-  onClose, onReset, onExport, onImport, toggleLanguage, currentLang, isDark, lastBackupDate, isBackupOverdue 
+  onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue 
 }) => {
   const fileInputRef = useRef(null);
   const [mode, setMode] = useState('menu'); 
@@ -147,7 +226,7 @@ const SettingsModal = ({
     ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' 
     : 'bg-red-50 hover:bg-red-100 text-red-600';
   
-  let formattedLastBackup = '尚未備份';
+  let formattedLastBackup = 'N/A';
   try {
       if (lastBackupDate) {
           const date = new Date(lastBackupDate);
@@ -156,7 +235,7 @@ const SettingsModal = ({
           }
       }
   } catch (e) {
-      formattedLastBackup = '時間格式錯誤';
+      formattedLastBackup = 'Error';
   }
 
   if (mode === 'confirm_reset') {
@@ -167,10 +246,8 @@ const SettingsModal = ({
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 ${isDark ? 'bg-red-900/50 text-red-400' : 'bg-red-100 text-red-500'}`}>
                  <AlertCircle size={24} />
               </div>
-              <h3 className={`text-lg font-bold ${titleClass}`}>確定重置？</h3>
-              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                將清除本月所有打卡紀錄。<br/>此動作無法復原。
-              </p>
+              <h3 className={`text-lg font-bold ${titleClass}`}>{t.confirmResetTitle}</h3>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
            </div>
            
            <div className="flex gap-3">
@@ -178,13 +255,13 @@ const SettingsModal = ({
                 onClick={() => setMode('menu')}
                 className={`flex-1 py-3 rounded-2xl font-bold text-sm transition-colors outline-none ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
               >
-                取消
+                {t.cancel}
               </button>
               <button 
                 onClick={onReset}
                 className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors outline-none shadow-lg shadow-red-200 dark:shadow-none"
               >
-                確認重置
+                {t.confirm}
               </button>
            </div>
         </div>
@@ -199,7 +276,7 @@ const SettingsModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6 px-1">
-           <h3 className={`text-lg font-bold ${titleClass}`}>設定與資料</h3>
+           <h3 className={`text-lg font-bold ${titleClass}`}>{t.settingsTitle}</h3>
         </div>
         
         <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs 
@@ -208,7 +285,7 @@ const SettingsModal = ({
               : (isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500')}
         `}>
              {isBackupOverdue ? <AlertTriangle size={14} /> : <Clock size={14} />}
-             <span className="font-medium">上次: {formattedLastBackup}</span>
+             <span className="font-medium">{t.lastBackup}{formattedLastBackup}</span>
         </div>
         
         <div className="space-y-3">
@@ -219,8 +296,8 @@ const SettingsModal = ({
             <div className={`p-2 rounded-xl group-hover:text-purple-500 dark:group-hover:text-purple-300 transition-colors shadow-sm ${iconBgClass}`}>
                <Globe size={18} />
             </div>
-            <span className="text-sm font-medium flex-1 text-left">切換星期顯示語言</span>
-            <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>{currentLang}</span>
+            <span className="text-sm font-medium flex-1 text-left">{t.switchLang}</span>
+            <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>{t.langName}</span>
           </button>
 
           <button 
@@ -231,7 +308,7 @@ const SettingsModal = ({
                <Download size={18} className={isBackupOverdue ? (isDark ? 'text-red-400' : 'text-red-500') : ''} />
             </div>
             <span className={`text-sm font-medium ${isBackupOverdue ? 'font-bold' : ''}`}>
-                {isBackupOverdue ? '建議立即匯出備份' : '匯出資料備份'}
+                {isBackupOverdue ? t.backupOverdue : t.export}
             </span>
           </button>
 
@@ -242,7 +319,7 @@ const SettingsModal = ({
              <div className={`p-2 rounded-xl group-hover:text-green-500 dark:group-hover:text-green-300 transition-colors shadow-sm ${iconBgClass}`}>
                <Upload size={18} />
              </div>
-            <span className="text-sm font-medium">匯入資料</span>
+            <span className="text-sm font-medium">{t.import}</span>
             <input 
               type="file" 
               accept=".json" 
@@ -261,7 +338,7 @@ const SettingsModal = ({
              <div className={`p-2 rounded-xl group-hover:text-red-600 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-red-400' : 'bg-white/80 text-red-400'}`}>
                <RotateCcw size={18} />
              </div>
-            <span className="text-sm font-medium">重置本月紀錄</span>
+            <span className="text-sm font-medium">{t.resetMonth}</span>
           </button>
         </div>
       </div>
@@ -270,7 +347,7 @@ const SettingsModal = ({
 };
 
 // --- Note Row Component ---
-const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect, isDark }) => {
+const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorderSelect, isDark, t }) => {
   const inputRef = useRef(null);
 
   return (
@@ -298,7 +375,7 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
          className={`flex-1 text-sm bg-transparent border-b focus:ring-0 px-3 pb-2 transition-all outline-none 
             ${isDark ? 'text-slate-200 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-700 border-slate-200 focus:border-slate-400 placeholder:text-slate-300'} 
             ${isReordering ? 'pointer-events-none' : ''}`}
-         placeholder={isReordering ? "點擊以交換順序" : "寫點什麼..."}
+         placeholder={isReordering ? t.swapHint : t.placeholderNote}
          readOnly={isReordering}
        />
        {!isReordering && (
@@ -465,6 +542,11 @@ export default function NewCalendarApp() {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
       return diffDays > BACKUP_REMINDER_DAYS;
   }, [lastBackupDate]);
+
+  // --- Localization ---
+  const langKey = Object.keys(TRANSLATIONS)[langIndex]; // zh, jp, en
+  const t = TRANSLATIONS[langKey];
+  const currentWeekLabels = t.weekDays;
 
   // --- Handlers ---
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -695,9 +777,6 @@ export default function NewCalendarApp() {
     };
   }, [records, year, month, categories]);
 
-  const langKey = Object.keys(WEEK_LABELS)[langIndex];
-  const currentWeekLabels = WEEK_LABELS[langKey];
-
   return (
     <>
     <style dangerouslySetInnerHTML={{__html: `
@@ -723,7 +802,7 @@ export default function NewCalendarApp() {
       `}>
         
         {/* Modals */}
-        {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} />}
+        {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
         {showSettings && (
             <SettingsModal 
                 onClose={() => setShowSettings(false)} 
@@ -731,7 +810,7 @@ export default function NewCalendarApp() {
                 onExport={handleExportData} 
                 onImport={handleImportData} 
                 toggleLanguage={toggleLanguage}
-                currentLang={langKey.toUpperCase()}
+                t={t}
                 isDark={darkMode}
                 lastBackupDate={lastBackupDate}
                 isBackupOverdue={isBackupOverdue}
@@ -742,7 +821,7 @@ export default function NewCalendarApp() {
         {reorderMode && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-in fade-in flex items-center gap-2">
              <ArrowRightLeft size={14} />
-             <span>點擊項目以交換順序</span>
+             <span>{t.swapHint}</span>
           </div>
         )}
 
@@ -753,7 +832,7 @@ export default function NewCalendarApp() {
               value={appTitle}
               onChange={(e) => setAppTitle(e.target.value)}
               className={`text-2xl font-bold bg-transparent border-none focus:ring-0 p-0 w-full outline-none ${darkMode ? 'text-slate-100 placeholder-slate-600' : 'text-slate-800 placeholder-slate-300'}`}
-              placeholder="自定義標題"
+              placeholder={t.titlePlaceholder}
             />
             
             <div className="flex items-center gap-2 mt-1">
@@ -773,7 +852,7 @@ export default function NewCalendarApp() {
                   title="回到今天"
                 >
                   <CalendarIcon size={14} />
-                  <span className="text-[10px] font-bold">Today</span>
+                  <span className="text-[10px] font-bold">{t.today}</span>
                 </button>
             </div>
           </div>
@@ -902,7 +981,7 @@ export default function NewCalendarApp() {
                               value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''}
                               onChange={(e) => setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: e.target.value})}
                               placeholder={`W${weekIndex + 1}`}
-                              className={`w-full h-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none ${darkMode ? 'text-slate-500 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-400 placeholder-slate-200 hover:bg-slate-50'}`}
+                              className={`w-full h-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none font-bold ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
                            />
                         </div>
                       </div>
@@ -913,7 +992,7 @@ export default function NewCalendarApp() {
               {/* Color Palette */}
               <div className="mt-6 px-1">
                  <div className="flex items-center justify-start gap-2 mb-3">
-                    <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>Categories</h3>
+                    <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.categoryHeader}</h3>
                     <button 
                       onClick={() => toggleReorderMode('color')}
                       className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
@@ -944,6 +1023,8 @@ export default function NewCalendarApp() {
                              onChange={(e) => updateCategoryLabel(cat.id, e.target.value)}
                              onBlur={() => setEditingCategoryId(null)}
                              onKeyDown={(e) => e.key === 'Enter' && setEditingCategoryId(null)}
+                             onCompositionStart={() => { /* Handle IME start if needed */ }}
+                             onCompositionEnd={(e) => updateCategoryLabel(cat.id, e.target.value)}
                              onClick={(e) => e.stopPropagation()} 
                              className={`w-full text-xs border-b focus:ring-0 p-0 font-medium outline-none ${darkMode ? 'text-slate-100 bg-slate-800 border-blue-500' : 'text-slate-800 bg-white border-blue-500'}`}
                            />
@@ -970,7 +1051,7 @@ export default function NewCalendarApp() {
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
-                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>Memo ({month + 1}月)</h3>
+                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.memoHeader} ({month + 1}月)</h3>
                       <button 
                         onClick={() => toggleReorderMode('note')}
                         className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}
@@ -993,6 +1074,7 @@ export default function NewCalendarApp() {
                         isSelected={swapSourceId === note.id}
                         onReorderSelect={(id) => handleItemSwap(id, 'note')}
                         isDark={darkMode}
+                        t={t}
                       />
                     ))}
                  </div>
@@ -1011,14 +1093,14 @@ export default function NewCalendarApp() {
                     const rangeInfo = stats.range[cat.id];
                     const style = COLOR_DEFINITIONS[cat.id];
                     
-                    let freqText = "0/月";
+                    let freqText = `0${t.perMonth}`;
                     if (rangeInfo.hasData) {
                         const startDate = new Date(rangeInfo.minVal);
                         const endDate = new Date(rangeInfo.maxVal);
                         const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1;
                         const total = stats.totalCounts[cat.id];
                         const avg = Math.floor(total / Math.max(1, monthsDiff));
-                        freqText = `${avg}/月`;
+                        freqText = `${avg}${t.perMonth}`;
                     }
 
                     let diffColorClass = darkMode ? 'text-slate-500' : 'text-slate-400'; 
@@ -1032,7 +1114,7 @@ export default function NewCalendarApp() {
                       <div key={cat.id} className={`flex-1 w-full p-3 rounded-2xl border ${darkMode ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-white/60'} shadow-sm flex items-center justify-between gap-4`}>
                          
                          {/* LEFT: Label & Big Number */}
-                         <div className="flex flex-col justify-center items-start w-24 flex-shrink-0">
+                         <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
                             <div className="flex items-center gap-1.5 mb-1">
                                <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
                                <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
@@ -1040,7 +1122,7 @@ export default function NewCalendarApp() {
                             <span className={`text-4xl font-black leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                                {current}
                             </span>
-                            <span className={`text-[9px] font-medium mt-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>本月次數</span>
+                            <span className={`text-[9px] font-medium mt-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsMonthCount}</span>
                          </div>
 
                          {/* RIGHT: Detailed Stats & Bar */}
@@ -1048,10 +1130,10 @@ export default function NewCalendarApp() {
                             {/* Top Stats Line */}
                             <div className="flex justify-between items-end">
                                <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                  頻率: {freqText}
+                                  {t.statsFreq}: {freqText}
                                </span>
                                <span className={`text-[10px] font-bold ${diffColorClass}`}>
-                                  {diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} vs 上月
+                                  {diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} {t.statsVsLast}
                                </span>
                             </div>
                             
@@ -1066,7 +1148,7 @@ export default function NewCalendarApp() {
                             {/* Bottom Total Line */}
                             <div className="flex justify-end items-center">
                                 <span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                   總計: {stats.totalCounts[cat.id]}
+                                   {t.statsTotal}: {stats.totalCounts[cat.id]}
                                    {rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}
                                 </span>
                             </div>
