@@ -367,7 +367,6 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
          value={note.text}
          onChange={onChange}
          onTouchStart={(e) => !isReordering && e.stopPropagation()}
-         // OPTIMIZED: Darkened text color (slate-900) and placeholder (slate-400)
          className={`flex-1 text-sm bg-transparent border-b focus:ring-0 px-3 pb-2 transition-all outline-none 
             ${isDark ? 'text-slate-100 border-slate-700 focus:border-slate-500 placeholder:text-slate-600' : 'text-slate-900 border-slate-200 focus:border-slate-400 placeholder:text-slate-400'} 
             ${isReordering ? 'pointer-events-none' : ''}`}
@@ -964,13 +963,13 @@ export default function NewCalendarApp() {
                             );
                           })}
                         </div>
-                        <div className="w-8 flex flex-col items-center justify-center">
-                           <input 
-                              type="text"
+                        {/* REPLACED INPUT WITH TEXTAREA */}
+                        <div className="w-8 flex flex-col items-center justify-center h-20">
+                           <textarea 
                               value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''}
                               onChange={(e) => setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: e.target.value})}
                               placeholder={`W${weekIndex + 1}`}
-                              className={`w-full h-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none font-bold ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
+                              className={`w-full h-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0.5 rounded transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-words ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
                            />
                         </div>
                       </div>
