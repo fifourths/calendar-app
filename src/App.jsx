@@ -132,7 +132,8 @@ const TRANSLATIONS = {
     statsMonthCount: 'Month Count',
     statsVsLast: 'vs Last',
     perMonth: '/ mo',
-    monthSuffix: ''
+    monthSuffix: '',
+    monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   }
 };
 
@@ -255,7 +256,7 @@ const SettingsModal = ({
               <h3 className={`text-lg font-bold ${titleClass}`}>{t.confirmResetTitle}</h3>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
               
-              {/* New Hint Added Here */}
+              {/* Reset Hint */}
               <p className={`text-[10px] bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                  {t.resetKeepNotesHint}
               </p>
@@ -788,6 +789,10 @@ export default function NewCalendarApp() {
     };
   }, [records, year, month, categories]);
 
+  const memoMonthLabel = langKey === 'en' 
+    ? t.monthNames[month] 
+    : `${month + 1}${t.monthSuffix}`;
+
   return (
     <>
     <style dangerouslySetInnerHTML={{__html: `
@@ -844,7 +849,7 @@ export default function NewCalendarApp() {
                   onClick={() => setShowDatePicker(true)}
                 >
                    <h2 className={`text-lg font-medium transition-colors ${darkMode ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>
-                     {year} {month + 1}
+                     {year}.{month + 1}
                    </h2>
                 </div>
                 
@@ -877,7 +882,7 @@ export default function NewCalendarApp() {
               <button onClick={() => setShowSettings(true)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none relative ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>
                 <Settings size={18} />
                 {/* BACKUP REMINDER DOT */}
-                {isBackupOverdue && lastBackupDate && (
+                {isBackupOverdue && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-sm animate-pulse"></span>
                 )}
               </button>
@@ -1061,7 +1066,7 @@ export default function NewCalendarApp() {
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
-                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.memoHeader} ({month + 1}{t.monthSuffix})</h3>
+                      <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-300'}`}>{t.memoHeader} ({memoMonthLabel})</h3>
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => toggleReorderMode('note')}
