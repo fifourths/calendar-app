@@ -8,24 +8,6 @@ import {
 
 // --- 1. Constants & Config ---
 
-// Built-in App Icon (The Grid Style) - SVG Source
-const APP_ICON_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="#ffffff"/>
-  <circle cx="128" cy="128" r="56" fill="#fca5a5"/> 
-  <circle cx="256" cy="128" r="56" fill="#fdba74"/> 
-  <circle cx="384" cy="128" r="56" fill="#fde047"/> 
-  <circle cx="128" cy="256" r="56" fill="#6ee7b7"/> 
-  <circle cx="256" cy="256" r="56" fill="#93c5fd"/> 
-  <circle cx="384" cy="256" r="56" fill="#d8b4fe"/> 
-  <circle cx="128" cy="384" r="56" fill="#f1f5f9"/> 
-  <circle cx="256" cy="384" r="56" fill="#f1f5f9"/> 
-  <circle cx="384" cy="384" r="56" fill="#f1f5f9"/> 
-</svg>
-`.trim();
-
-const APP_ICON_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(APP_ICON_SVG)}`;
-
 // Robust Dark Mode Color Definitions
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', borderLight: 'border-red-300',    borderDark: 'border-red-500/50',    textLight: 'text-red-500',    textDark: 'text-red-300' },
@@ -254,6 +236,7 @@ const SettingsModal = ({
                  <AlertCircle size={24} />
               </div>
               <h3 className={`text-lg font-bold ${titleClass}`}>{t.confirmResetTitle}</h3>
+              {/* Security: This HTML is from trusted internal translations only */}
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
               
               {/* Reset Hint */}
@@ -440,6 +423,7 @@ export default function NewCalendarApp() {
   // --- AUTO-INJECT ICON ON MOUNT ---
   useEffect(() => {
     const injectIcon = () => {
+        // Remove existing icons to prevent duplication
         const existingIcons = document.querySelectorAll("link[rel*='icon']");
         existingIcons.forEach(el => el.remove());
         
@@ -447,8 +431,12 @@ export default function NewCalendarApp() {
         canvas.width = 180;
         canvas.height = 180;
         const ctx = canvas.getContext('2d');
+        
+        // Draw Icon Background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, 180, 180);
+        
+        // Draw Dots (The Grid)
         const dotColors = [
             '#fca5a5', '#fdba74', '#fde047', 
             '#6ee7b7', '#93c5fd', '#d8b4fe', 
@@ -458,6 +446,7 @@ export default function NewCalendarApp() {
         const gap = 45;
         const startX = 45;
         const startY = 45;
+        
         dotColors.forEach((color, i) => {
             const row = Math.floor(i / 3);
             const col = i % 3;
@@ -468,6 +457,7 @@ export default function NewCalendarApp() {
             ctx.fillStyle = color;
             ctx.fill();
         });
+        
         const iconUrl = canvas.toDataURL('image/png');
 
         const link = document.createElement('link');
@@ -481,7 +471,9 @@ export default function NewCalendarApp() {
         appleLink.href = iconUrl;
         document.head.appendChild(appleLink);
     };
-    setTimeout(injectIcon, 1000);
+    // Delay slightly to ensure document is ready
+    const timer = setTimeout(injectIcon, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Persistence
@@ -513,6 +505,7 @@ export default function NewCalendarApp() {
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
+      // Backward compatibility for v70 footerNotes
       const savedOldNotes = localStorage.getItem('calendar_app_v70_footerNotes');
       if (savedOldNotes) {
         try {
@@ -669,6 +662,8 @@ export default function NewCalendarApp() {
         setLastBackupDate(new Date().toISOString());
         setShowSettings(false);
       } catch (error) {
+        // Fallback for corrupt JSON
+        alert('匯入失敗：檔案格式錯誤');
         setShowSettings(false);
       }
     };
