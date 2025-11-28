@@ -963,8 +963,16 @@ export default function NewCalendarApp() {
                             );
                           })}
                         </div>
-                        {/* MODIFIED: Stop Input When Full */}
-                        <div className="w-8 flex flex-col items-center justify-center h-20">
+                        
+                        {/* FIX: Parent click focus + Centered Textarea + Stop on Full */}
+                        <div 
+                          className="w-8 flex flex-col items-center justify-center h-20 cursor-text"
+                          onClick={(e) => {
+                             // Proxy click to textarea
+                             const textarea = e.currentTarget.querySelector('textarea');
+                             if(textarea) textarea.focus();
+                          }}
+                        >
                            <textarea 
                               value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''}
                               onChange={(e) => {
@@ -984,8 +992,8 @@ export default function NewCalendarApp() {
                                   setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: newVal});
                               }}
                               placeholder={`W${weekIndex + 1}`}
-                              rows={3}
-                              className={`w-full h-auto max-h-[76px] text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-words ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
+                              rows={1}
+                              className={`w-full h-auto max-h-[78px] text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 rounded transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-words ${darkMode ? 'text-slate-400 placeholder-slate-700 hover:bg-slate-800' : 'text-slate-600 placeholder-slate-200 hover:bg-slate-50'}`}
                            />
                         </div>
                       </div>
@@ -1143,8 +1151,8 @@ export default function NewCalendarApp() {
                          {/* LEFT: Label & Big Number */}
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
                             <div className="flex items-center gap-1.5 mb-1">
-                                <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
-                                <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+                               <div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div>
+                               <span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
                             </div>
                             <span className={`text-4xl font-black leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                                {current}
