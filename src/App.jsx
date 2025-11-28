@@ -236,10 +236,8 @@ const SettingsModal = ({
                  <AlertCircle size={24} />
               </div>
               <h3 className={`text-lg font-bold ${titleClass}`}>{t.confirmResetTitle}</h3>
-              {/* Security: This HTML is from trusted internal translations only */}
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
               
-              {/* Reset Hint */}
               <p className={`text-[10px] bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                  {t.resetKeepNotesHint}
               </p>
@@ -409,7 +407,10 @@ export default function NewCalendarApp() {
   const [allFooterNotes, setAllFooterNotes] = useState({});
   
   const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
+  
+  // FIX: Separate editing state and temp text state
   const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [tempLabel, setTempLabel] = useState('');
   
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
@@ -423,7 +424,6 @@ export default function NewCalendarApp() {
   // --- AUTO-INJECT ICON ON MOUNT ---
   useEffect(() => {
     const injectIcon = () => {
-        // Remove existing icons to prevent duplication
         const existingIcons = document.querySelectorAll("link[rel*='icon']");
         existingIcons.forEach(el => el.remove());
         
@@ -431,12 +431,8 @@ export default function NewCalendarApp() {
         canvas.width = 180;
         canvas.height = 180;
         const ctx = canvas.getContext('2d');
-        
-        // Draw Icon Background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, 180, 180);
-        
-        // Draw Dots (The Grid)
         const dotColors = [
             '#fca5a5', '#fdba74', '#fde047', 
             '#6ee7b7', '#93c5fd', '#d8b4fe', 
@@ -446,7 +442,6 @@ export default function NewCalendarApp() {
         const gap = 45;
         const startX = 45;
         const startY = 45;
-        
         dotColors.forEach((color, i) => {
             const row = Math.floor(i / 3);
             const col = i % 3;
@@ -457,7 +452,6 @@ export default function NewCalendarApp() {
             ctx.fillStyle = color;
             ctx.fill();
         });
-        
         const iconUrl = canvas.toDataURL('image/png');
 
         const link = document.createElement('link');
@@ -471,7 +465,6 @@ export default function NewCalendarApp() {
         appleLink.href = iconUrl;
         document.head.appendChild(appleLink);
     };
-    // Delay slightly to ensure document is ready
     const timer = setTimeout(injectIcon, 1000);
     return () => clearTimeout(timer);
   }, []);
@@ -505,7 +498,6 @@ export default function NewCalendarApp() {
     if (savedNewNotes) {
       setAllFooterNotes(JSON.parse(savedNewNotes));
     } else {
-      // Backward compatibility for v70 footerNotes
       const savedOldNotes = localStorage.getItem('calendar_app_v70_footerNotes');
       if (savedOldNotes) {
         try {
@@ -596,6 +588,14 @@ export default function NewCalendarApp() {
   const updateCategoryLabel = (id, newLabel) => {
     setCategories(prev => prev.map(c => c.id === id ? { ...c, defaultLabel: newLabel } : c));
   };
+  
+  // New handler to commit changes only when done editing
+  const saveCategoryLabel = (id) => {
+    if (tempLabel.trim() !== '') {
+        updateCategoryLabel(id, tempLabel);
+    }
+    setEditingCategoryId(null);
+  };
 
   const handleUpdateNote = (idx, text) => {
     const newNotes = [...footerNotes];
@@ -662,7 +662,6 @@ export default function NewCalendarApp() {
         setLastBackupDate(new Date().toISOString());
         setShowSettings(false);
       } catch (error) {
-        // Fallback for corrupt JSON
         alert('匯入失敗：檔案格式錯誤');
         setShowSettings(false);
       }
@@ -796,13 +795,6 @@ export default function NewCalendarApp() {
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       @media (hover: none) {
         .hover\\:bg-opacity-80:hover { background-opacity: 1; }
-      }
-      .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both infinite; }
-      @keyframes shake {
-        0% { transform: rotate(0deg); }
-        25% { transform: rotate(1deg); }
-        75% { transform: rotate(-1deg); }
-        100% { transform: rotate(0deg); }
       }
     `}} />
 
@@ -1029,12 +1021,10 @@ export default function NewCalendarApp() {
                          {editingCategoryId === cat.id && !reorderMode ? (
                            <input 
                              autoFocus
-                             value={cat.defaultLabel}
-                             onChange={(e) => updateCategoryLabel(cat.id, e.target.value)}
-                             onBlur={() => setEditingCategoryId(null)}
-                             onKeyDown={(e) => e.key === 'Enter' && setEditingCategoryId(null)}
-                             onCompositionStart={() => { /* Handle IME start if needed */ }}
-                             onCompositionEnd={(e) => updateCategoryLabel(cat.id, e.target.value)}
+                             value={tempLabel}
+                             onChange={(e) => setTempLabel(e.target.value)}
+                             onBlur={() => saveCategoryLabel(cat.id)}
+                             onKeyDown={(e) => e.key === 'Enter' && saveCategoryLabel(cat.id)}
                              onClick={(e) => e.stopPropagation()} 
                              className={`w-full text-xs border-b focus:ring-0 p-0 font-medium outline-none ${darkMode ? 'text-slate-100 bg-slate-800 border-blue-500' : 'text-slate-800 bg-white border-blue-500'}`}
                            />
@@ -1044,6 +1034,7 @@ export default function NewCalendarApp() {
                                if(!reorderMode) {
                                  e.stopPropagation();
                                  setEditingCategoryId(cat.id);
+                                 setTempLabel(cat.defaultLabel); // Load current text into temp state
                                }
                              }}
                              className={`w-full text-xs font-medium truncate ${darkMode ? 'text-slate-300' : 'text-slate-600'} ${reorderMode ? 'pointer-events-none' : ''}`}
