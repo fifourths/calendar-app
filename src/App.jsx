@@ -17,7 +17,6 @@ const COLOR_DEFINITIONS = {
   purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', pastel: 'bg-purple-100', pastelDark: 'bg-purple-900/30' },
 };
 
-// Fallback style to prevent crashes if color ID is missing
 const FALLBACK_COLOR = { light: 'bg-gray-300', dark: 'bg-gray-600', pastel: 'bg-gray-100', pastelDark: 'bg-gray-800' };
 
 const INITIAL_CATEGORIES = [
@@ -136,7 +135,6 @@ const BACKUP_REMINDER_DAYS = 7;
 
 // --- 2. Helper Hooks & Functions ---
 
-// Custom Hook: Long Press
 const useLongPress = (callback, ms = 500) => {
   const timerRef = useRef(null);
   const isLongPress = useRef(false);
@@ -179,6 +177,29 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
+// Grid Overlay: Forces lines to appear ON TOP of colors
+const GridOverlay = ({ gridMode, isDark }) => {
+  const lineColor = isDark ? 'bg-slate-600' : 'bg-slate-300';
+  return (
+    <div className="absolute inset-0 pointer-events-none z-10">
+       {/* Horizontal Line (Shared) */}
+       <div className={`absolute top-1/2 left-0 right-0 h-[1px] ${lineColor}`}></div>
+       
+       {/* Vertical Lines */}
+       {gridMode === 4 ? (
+          // 2x2: One center line
+          <div className={`absolute left-1/2 top-0 bottom-0 w-[1px] ${lineColor}`}></div>
+       ) : (
+          // 3x2: Two lines at 33.3% and 66.6%
+          <>
+            <div className={`absolute left-1/3 top-0 bottom-0 w-[1px] ${lineColor}`}></div>
+            <div className={`absolute left-2/3 top-0 bottom-0 w-[1px] ${lineColor}`}></div>
+          </>
+       )}
+    </div>
+  );
+};
+
 const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   const textareaRef = useRef(null);
   useEffect(() => {
@@ -205,7 +226,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
   const cellRecord = records[dateKey] || {};
   const currentNotes = dayNotes[dateKey] || {};
   
-  // Safe Date Parsing
   let title = dateKey;
   try {
       const [y, m, d] = dateKey.split('-');
@@ -220,7 +240,15 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
     const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
     
     cells.push(
-      <div key={i} className={`relative p-2 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+      <div key={i} className={`relative p-2 pt-6 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+        {/* Top Left Indicator */}
+        {cat && (
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
+             <div className={`w-2 h-2 rounded-full ${isDark ? style.dark : style.light}`}></div>
+             <span className={`text-[9px] font-bold opacity-80 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+          </div>
+        )}
+        
         <textarea 
           className={`flex-1 w-full bg-transparent resize-none outline-none text-xs leading-relaxed ${isDark ? 'text-slate-200 placeholder-slate-600' : 'text-slate-800 placeholder-slate-400'}`}
           placeholder="..."
@@ -228,7 +256,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
           onChange={(e) => onSaveNote(dateKey, i, e.target.value)}
           onClick={(e) => e.stopPropagation()}
         />
-        {cat && (<div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${isDark ? style.dark : style.light}`}></div>)}
       </div>
     );
   }
@@ -241,7 +268,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
              <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
           </div>
           <div className={`grid gap-2 h-64 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{cells}</div>
-          <div className="mt-4 text-center"><span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.editHint}</span></div>
        </div>
     </div>
   );
@@ -405,34 +431,53 @@ export default function NewCalendarApp() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Persistence
+  // CRITICAL FIX: Robust Persistence Loading
+  // This ensures no state becomes NULL, preventing white screens
   useEffect(() => {
-    const load = (key, setter, defaultVal) => { const saved = localStorage.getItem(`calendar_app_v72_${key}`); if (saved) { try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); } } else if (defaultVal !== undefined) { setter(defaultVal); } };
-    load('title', setAppTitle);
-    load('gridMode', setGridMode);
+    const load = (key, setter, defaultVal) => { 
+        const saved = localStorage.getItem(`calendar_app_v73_${key}`); 
+        if (saved) { 
+            try { 
+                const parsed = JSON.parse(saved);
+                // Force use fallback if parsed is null (crucial fix)
+                setter(parsed === null ? defaultVal : parsed); 
+            } catch (e) { 
+                if(defaultVal !== undefined) setter(defaultVal); 
+            } 
+        } else if (defaultVal !== undefined) { 
+            setter(defaultVal); 
+        } 
+    };
+    
+    load('title', setAppTitle, 'My Life Log');
+    load('gridMode', setGridMode, 4);
     load('categories', setCategories, INITIAL_CATEGORIES);
-    load('records', setRecords);
-    load('weekNotes', setWeekNotes);
-    load('dayNotes', setDayNotes);
-    load('langIndex', setLangIndex);
+    load('records', setRecords, {});
+    load('weekNotes', setWeekNotes, {});
+    load('dayNotes', setDayNotes, {});
+    load('langIndex', setLangIndex, 0);
     load('darkMode', setDarkMode, false);
     load('lastBackupDate', setLastBackupDate, null);
     
-    const savedNewNotes = localStorage.getItem('calendar_app_v72_allFooterNotes');
-    if (savedNewNotes) setAllFooterNotes(JSON.parse(savedNewNotes));
+    const savedNewNotes = localStorage.getItem('calendar_app_v73_allFooterNotes');
+    if (savedNewNotes) {
+        try {
+            setAllFooterNotes(JSON.parse(savedNewNotes) || {});
+        } catch(e) { setAllFooterNotes({}); }
+    }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v72_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v72_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v72_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v72_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v72_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v72_dayNotes', JSON.stringify(dayNotes));
-    localStorage.setItem('calendar_app_v72_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v72_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v72_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v72_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v73_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v73_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v73_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v73_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v73_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v73_dayNotes', JSON.stringify(dayNotes));
+    localStorage.setItem('calendar_app_v73_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v73_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v73_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v73_lastBackupDate', JSON.stringify(lastBackupDate));
   }, [appTitle, gridMode, categories, records, weekNotes, dayNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
@@ -558,7 +603,7 @@ export default function NewCalendarApp() {
     }
   };
 
-  // --- Stats Logic (FIXED & ROBUST) ---
+  // --- Stats Logic (Safeguarded against null) ---
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month); 
@@ -575,16 +620,23 @@ export default function NewCalendarApp() {
   for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
 
   const stats = useMemo(() => {
+    // Safety check: if records or categories are null/undefined, return empty stats
+    if (!records || !categories) return { currentCounts: {}, prevCounts: {}, totalCounts: {}, maxCount: 0, range: {} };
+
     const currentMonthKey = getMonthKey(year, month);
     const prevMonthDate = new Date(year, month - 1, 1);
     const prevMonthKey = getMonthKey(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
     
     const calcCounts = (monthKeyFilter = null) => {
-      const counts = {}; categories.forEach(c => counts[c.id] = 0);
-      if (!records) return counts;
+      const counts = {}; 
+      categories.forEach(c => counts[c.id] = 0);
+      
       Object.keys(records).forEach(dateKey => {
         if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
-        Object.values(records[dateKey]).forEach(colorId => { if (counts[colorId] !== undefined) counts[colorId]++; });
+        const rec = records[dateKey];
+        if (rec) {
+            Object.values(rec).forEach(colorId => { if (counts[colorId] !== undefined) counts[colorId]++; });
+        }
       });
       return counts;
     };
@@ -592,24 +644,25 @@ export default function NewCalendarApp() {
     const range = {}; 
     categories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
     
-    if (records) {
-      Object.keys(records).forEach(dateKey => {
-          if (!dateKey) return;
-          const parts = dateKey.split('-');
-          if (parts.length < 2) return;
-          const [y, m] = parts.map(Number);
-          const monthVal = y * 12 + (m - 1); 
-          const monthStr = `${y}.${String(m).padStart(2, '0')}`;
+    Object.keys(records).forEach(dateKey => {
+        if (!dateKey) return;
+        const parts = dateKey.split('-');
+        if (parts.length < 2) return;
+        const [y, m] = parts.map(Number);
+        const monthVal = y * 12 + (m - 1); 
+        const monthStr = `${y}.${String(m).padStart(2, '0')}`;
 
-          Object.values(records[dateKey]).forEach(colorId => {
-              if (range[colorId]) {
-                  range[colorId].hasData = true;
-                  if (monthVal < range[colorId].minVal) { range[colorId].minVal = monthVal; range[colorId].min = monthStr; }
-                  if (monthVal > range[colorId].maxVal) { range[colorId].maxVal = monthVal; range[colorId].max = monthStr; }
-              }
-          });
-      });
-    }
+        const rec = records[dateKey];
+        if (rec) {
+             Object.values(rec).forEach(colorId => {
+                  if (range[colorId]) {
+                      range[colorId].hasData = true;
+                      if (monthVal < range[colorId].minVal) { range[colorId].minVal = monthVal; range[colorId].min = monthStr; }
+                      if (monthVal > range[colorId].maxVal) { range[colorId].maxVal = monthVal; range[colorId].max = monthStr; }
+                  }
+             });
+        }
+    });
 
     const currentCounts = calcCounts(currentMonthKey);
     const maxCount = Math.max(1, ...Object.values(currentCounts));
@@ -685,7 +738,6 @@ export default function NewCalendarApp() {
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
                             const hasNote = isCurrent && dayNotes[cell.dateKey] && Object.values(dayNotes[cell.dateKey]).some(t => t && t.trim().length > 0);
                             
-                            // Initialize Long Press Hook
                             const longPress = useLongPress(() => {
                                 if (isCurrent) setZoomedDateKey(cell.dateKey);
                             });
@@ -706,25 +758,30 @@ export default function NewCalendarApp() {
                                         handleCellClick(cell.dateKey, i, longPress.isLongPress.current); 
                                     }}
                                     className={`relative w-full h-full outline-none hoverable ${finalColor} hover:opacity-80`}
-                                 >
-                                    <div className={`absolute inset-0 pointer-events-none ${darkMode ? 'border-slate-600' : 'border-slate-300'} ${gridMode === 4 && i === 0 ? 'border-r-[0.5px] border-b-[0.5px]' : ''} ${gridMode === 4 && i === 1 ? 'border-b-[0.5px]' : ''} ${gridMode === 4 && i === 2 ? 'border-r-[0.5px]' : ''} ${gridMode === 6 && (i === 0 || i === 1) ? 'border-r-[0.5px] border-b-[0.5px]' : ''} ${gridMode === 6 && i === 2 ? 'border-b-[0.5px]' : ''} ${gridMode === 6 && (i === 3 || i === 4) ? 'border-r-[0.5px]' : ''}`}></div>
-                                 </div>
+                                 />
                                );
                             }
 
                             return (
                               <div key={dayIndex} 
-                                   // GAP FIX: Removed 'border', added 'ring-1 ring-inset' to fix gap issue
+                                   // Visual: Outer Border
                                    className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ring-1 ring-inset ${isCurrent ? (darkMode ? 'bg-slate-800 ring-slate-500' : 'bg-white ring-slate-400') : (darkMode ? 'bg-slate-800/30 ring-slate-800 opacity-40' : 'bg-white/50 ring-slate-200 opacity-40')}`}
                                    {...(isCurrent ? longPress.handlers : {})}
                               >
-                                 {/* GAP FIX: Added gap-0 to grid */}
+                                 {/* Grid Lines Overlay - Ensures lines are ON TOP of colors */}
+                                 <GridOverlay gridMode={gridMode} isDark={darkMode} />
+                                 
+                                 {/* Color Cells */}
                                  <div className={`flex-1 grid w-full h-full gap-0 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
-                                 <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-10">
-                                   <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${isTodayDate ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') : (darkMode ? 'text-slate-400' : 'text-slate-500')}`}>{cell.day}</span>
+                                 
+                                 {/* Date Number - Dark Mode Lighter Color Fixed */}
+                                 <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-20">
+                                   <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${isTodayDate ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') : (darkMode ? 'text-slate-200' : 'text-slate-500')}`}>{cell.day}</span>
                                  </div>
+                                 
+                                 {/* Note Indicator */}
                                  {hasNote && (
-                                     <div className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-2 h-0.5 rounded-full ${darkMode ? 'bg-slate-400' : 'bg-slate-400'}`}></div>
+                                     <div className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-2 h-0.5 rounded-full z-20 ${darkMode ? 'bg-slate-400' : 'bg-slate-400'}`}></div>
                                  )}
                               </div>
                             );
@@ -796,17 +853,17 @@ export default function NewCalendarApp() {
             <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2">
                <div className="flex flex-col h-full gap-2">
                  {categories.map((cat) => {
-                    const current = stats.currentCounts[cat.id];
-                    const prev = stats.prevCounts[cat.id];
+                    const current = stats.currentCounts[cat.id] || 0;
+                    const prev = stats.prevCounts[cat.id] || 0;
                     const diff = current - prev;
                     const barWidth = stats.maxCount > 0 ? (current / stats.maxCount) * 100 : 0;
                     const rangeInfo = stats.range[cat.id];
                     const style = COLOR_DEFINITIONS[cat.id] || FALLBACK_COLOR;
                     
                     let freqText = `0${t.perMonth}`;
-                    if (rangeInfo.hasData) {
+                    if (rangeInfo && rangeInfo.hasData) {
                         const monthsDiff = (rangeInfo.maxVal - rangeInfo.minVal) + 1;
-                        const total = stats.totalCounts[cat.id]; 
+                        const total = stats.totalCounts[cat.id] || 0; 
                         const avg = Math.floor(total / Math.max(1, monthsDiff));
                         freqText = `${avg}${t.perMonth}`;
                     }
@@ -823,7 +880,7 @@ export default function NewCalendarApp() {
                          <div className="flex-1 flex flex-col justify-center gap-1.5">
                             <div className="flex justify-between items-end"><span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.statsFreq}: {freqText}</span><span className={`text-[10px] font-bold ${diffColorClass}`}>{diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} {t.statsVsLast}</span></div>
                             <div className={`h-1.5 w-full rounded-full overflow-hidden relative ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}><div className={`h-full rounded-full transition-all duration-500 ease-out ${darkMode ? style.dark : style.light}`} style={{ width: `${Math.max(barWidth, 2)}%` }}></div></div>
-                            <div className="flex justify-end items-center"><span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsTotal}: {stats.totalCounts[cat.id]}{rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}</span></div>
+                            <div className="flex justify-end items-center"><span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsTotal}: {stats.totalCounts[cat.id] || 0}{rangeInfo && rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}</span></div>
                          </div>
                       </div>
                     )
