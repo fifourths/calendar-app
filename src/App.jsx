@@ -133,9 +133,13 @@ const BACKUP_REMINDER_DAYS = 7;
 
 // --- 2. Helper Functions ---
 
-const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+const getDaysInMonth = (year, month) => {
+  if (isNaN(year) || isNaN(month)) return 0;
+  return new Date(year, month + 1, 0).getDate();
+};
 
 const getFirstDayOfMonth = (year, month) => {
+  if (isNaN(year) || isNaN(month)) return 0;
   const day = new Date(year, month, 1).getDay();
   return day === 0 ? 6 : day - 1; // Mon=0, Sun=6
 };
@@ -523,8 +527,8 @@ export default function NewCalendarApp() {
   const [weekNotes, setWeekNotes] = useState({});
   const [allFooterNotes, setAllFooterNotes] = useState({});
   
-  // Set default color back to first category
-  const [selectedColor, setSelectedColor] = useState(INITIAL_CATEGORIES[0].id);
+  // Default no selection
+  const [selectedColor, setSelectedColor] = useState(null);
   
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [tempLabel, setTempLabel] = useState('');
@@ -639,8 +643,13 @@ export default function NewCalendarApp() {
     localStorage.setItem('calendar_app_v70_categoryOrder', JSON.stringify(categories.map(c => c.id)));
   }, [appTitle, gridMode, categories, records, recordNotes, weekNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth(); 
+  // Safe date check
+  const safeDate = useMemo(() => {
+      return isNaN(currentDate.getTime()) ? new Date() : currentDate;
+  }, [currentDate]);
+
+  const year = safeDate.getFullYear();
+  const month = safeDate.getMonth(); 
   const monthKey = getMonthKey(year, month);
   const today = new Date();
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
@@ -691,7 +700,6 @@ export default function NewCalendarApp() {
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
     
-    // Toggle logic: if clicked color is same as selected, remove it. Otherwise overwrite.
     if (currentColor === selectedColor) {
       delete newRecord[subIndex];
     } else {
@@ -855,6 +863,8 @@ export default function NewCalendarApp() {
   }
 
   const stats = useMemo(() => {
+    if (!categories || !records) return { currentCounts: {}, prevCounts: {}, totalCounts: {}, maxCount: 0, range: {} };
+
     const currentMonthKey = getMonthKey(year, month);
     const prevMonthDate = new Date(year, month - 1, 1);
     const prevMonthKey = getMonthKey(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
@@ -926,6 +936,8 @@ export default function NewCalendarApp() {
         className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px]
          ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}
         `}
+        // Click whitespace to deselect color
+        onClick={() => setSelectedColor(null)}
       >
         
         {/* Modals */}
@@ -1050,7 +1062,7 @@ export default function NewCalendarApp() {
                   </div>
 
                   {/* Calendar Grid */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 select-none">
                     {weeks.map((week, weekIndex) => (
                       <div key={weekIndex} className="flex gap-1">
                          <div className="grid grid-cols-7 gap-1 flex-1">
@@ -1070,7 +1082,7 @@ export default function NewCalendarApp() {
                                 pressTimer.current = setTimeout(() => {
                                     isLongPress.current = true;
                                     setExpandedDate({ dateKey: cell.dateKey, day: cell.day });
-                                }, 500); // 500ms for long press
+                                }, 500); 
                             };
 
                             const endPress = (subIndex) => {
@@ -1096,7 +1108,7 @@ export default function NewCalendarApp() {
                                     onMouseUp={() => endPress(i)}
                                     onTouchStart={startPress}
                                     onTouchEnd={(e) => { e.preventDefault(); endPress(i); }}
-                                    className={`relative w-full h-full outline-none hoverable ${finalColor} hover:opacity-80`}
+                                    className={`relative w-full h-full outline-none hoverable ${finalColor} hover:opacity-80 touch-callout-none`}
                                   >
                                     <div className={`absolute inset-0 pointer-events-none 
                                        ${darkMode ? 'border-slate-500' : 'border-slate-400/70'}
@@ -1112,13 +1124,13 @@ export default function NewCalendarApp() {
                             });
 
                             return (
-                              <div key={dayIndex} className="relative h-20 cursor-pointer group">
+                              <div key={dayIndex} className="relative h-20 cursor-pointer group touch-callout-none select-none">
                                  {/* Inner Content Card */}
                                  <div className={`
                                      absolute inset-0 rounded-lg overflow-hidden flex flex-col transition-colors
                                      ${isCurrent 
-                                        ? (darkMode ? 'bg-slate-800 border-2 border-slate-500' : 'bg-white border-2 border-slate-400')
-                                        : (darkMode ? 'bg-slate-800/30 border-2 border-slate-800 opacity-40' : 'bg-white/50 border-2 border-slate-200 opacity-40')
+                                        ? (darkMode ? 'bg-slate-800 border border-slate-500' : 'bg-white border border-slate-400')
+                                        : (darkMode ? 'bg-slate-800/30 border border-slate-800 opacity-40' : 'bg-white/50 border border-slate-200 opacity-40')
                                      }
                                  `}>
                                      {/* Subcells Container */}
@@ -1126,8 +1138,8 @@ export default function NewCalendarApp() {
                                          {subCells}
                                      </div>
 
-                                     {/* Date Number - Simple Text Only (No Circle/Shadow) */}
-                                     <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-10 flex items-center gap-0.5">
+                                     {/* Date Number - Plain & Simple */}
+                                     <div className="absolute bottom-[1px] right-[1px] pointer-events-none z-10 flex items-center gap-0.5">
                                        <span className={`
                                          text-[10px] font-bold flex items-center justify-center w-5 h-5 rounded-full transition-all
                                          ${isTodayDate 
@@ -1203,7 +1215,7 @@ export default function NewCalendarApp() {
                             if (reorderMode === 'color') {
                                 handleItemSwap(cat.id, 'color');
                             } else {
-                                setSelectedColor(cat.id);
+                                setSelectedColor(prev => prev === cat.id ? null : cat.id);
                             }
                         }}
                         onDoubleClick={(e) => {
