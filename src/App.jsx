@@ -143,7 +143,6 @@ function useStickyState(key, defaultValue) {
       const item = window.localStorage.getItem(key);
       if (item !== null && item !== 'undefined') {
         const parsed = JSON.parse(item);
-        // Safety Check: If we expect an array (like categories) but got something else, fallback
         if (Array.isArray(defaultValue) && !Array.isArray(parsed)) return defaultValue;
         if (typeof defaultValue === 'object' && !Array.isArray(defaultValue) && (typeof parsed !== 'object' || Array.isArray(parsed))) return defaultValue;
         return parsed;
@@ -207,10 +206,12 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
-// Grid Overlay: Draws Border AND Internal Lines ON TOP
+// UPDATED: Grid Overlay (Darker Outer Border, Lighter Inner Lines)
 const GridOverlay = ({ gridMode, isDark }) => {
-  const lineColor = isDark ? 'bg-slate-600' : 'bg-slate-300';
-  const borderColor = isDark ? 'border-slate-600' : 'border-slate-300';
+  // Inner lines: lighter
+  const lineColor = isDark ? 'bg-slate-700' : 'bg-slate-200';
+  // Outer border: darker (visible even if bg color is filled)
+  const borderColor = isDark ? 'border-slate-500' : 'border-slate-400';
   
   return (
     <div className={`absolute inset-0 pointer-events-none z-10 rounded-lg border ${borderColor}`}>
@@ -411,20 +412,20 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // SAFE STORAGE: Changing key to 'v75' forces a clean slate to avoid existing corrupt data
-  const [appTitle, setAppTitle] = useStickyState('v75_title', 'My Life Log');
-  const [gridMode, setGridMode] = useStickyState('v75_gridMode', 4);
+  // SAFE STORAGE: Changing key to 'v76' forces a clean slate to avoid existing corrupt data
+  const [appTitle, setAppTitle] = useStickyState('v76_title', 'My Life Log');
+  const [gridMode, setGridMode] = useStickyState('v76_gridMode', 4);
   
   // SAFETY: Ensure default is always an array
-  const [categories, setCategories] = useStickyState('v75_categories', INITIAL_CATEGORIES);
+  const [categories, setCategories] = useStickyState('v76_categories', INITIAL_CATEGORIES);
   
-  const [records, setRecords] = useStickyState('v75_records', {});
-  const [weekNotes, setWeekNotes] = useStickyState('v75_weekNotes', {});
-  const [dayNotes, setDayNotes] = useStickyState('v75_dayNotes', {});
-  const [allFooterNotes, setAllFooterNotes] = useStickyState('v75_allFooterNotes', {});
-  const [langIndex, setLangIndex] = useStickyState('v75_langIndex', 0);
-  const [darkMode, setDarkMode] = useStickyState('v75_darkMode', false);
-  const [lastBackupDate, setLastBackupDate] = useStickyState('v75_lastBackupDate', null);
+  const [records, setRecords] = useStickyState('v76_records', {});
+  const [weekNotes, setWeekNotes] = useStickyState('v76_weekNotes', {});
+  const [dayNotes, setDayNotes] = useStickyState('v76_dayNotes', {});
+  const [allFooterNotes, setAllFooterNotes] = useStickyState('v76_allFooterNotes', {});
+  const [langIndex, setLangIndex] = useStickyState('v76_langIndex', 0);
+  const [darkMode, setDarkMode] = useStickyState('v76_darkMode', false);
+  const [lastBackupDate, setLastBackupDate] = useStickyState('v76_lastBackupDate', null);
   
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -585,7 +586,7 @@ export default function NewCalendarApp() {
     }
   };
 
-  // --- Stats Logic (Safeguarded against null) ---
+  // --- Stats Logic (Safeguarded against null/crash) ---
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month); 
@@ -605,51 +606,56 @@ export default function NewCalendarApp() {
   const safeCategories = Array.isArray(categories) ? categories : INITIAL_CATEGORIES;
 
   const stats = useMemo(() => {
-    if (!records) return { currentCounts: {}, prevCounts: {}, totalCounts: {}, maxCount: 0, range: {} };
+    try {
+        if (!records) return { currentCounts: {}, prevCounts: {}, totalCounts: {}, maxCount: 0, range: {} };
 
-    const currentMonthKey = getMonthKey(year, month);
-    const prevMonthDate = new Date(year, month - 1, 1);
-    const prevMonthKey = getMonthKey(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
-    
-    const calcCounts = (monthKeyFilter = null) => {
-      const counts = {}; 
-      safeCategories.forEach(c => counts[c.id] = 0);
-      Object.keys(records).forEach(dateKey => {
-        if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
-        const rec = records[dateKey];
-        if (rec) {
-            Object.values(rec).forEach(colorId => { if (counts[colorId] !== undefined) counts[colorId]++; });
-        }
-      });
-      return counts;
-    };
-    
-    const range = {}; 
-    safeCategories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
-    
-    Object.keys(records).forEach(dateKey => {
-        if (!dateKey) return;
-        const parts = dateKey.split('-');
-        if (parts.length < 2) return;
-        const [y, m] = parts.map(Number);
-        const monthVal = y * 12 + (m - 1); 
-        const monthStr = `${y}.${String(m).padStart(2, '0')}`;
+        const currentMonthKey = getMonthKey(year, month);
+        const prevMonthDate = new Date(year, month - 1, 1);
+        const prevMonthKey = getMonthKey(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
+        
+        const calcCounts = (monthKeyFilter = null) => {
+          const counts = {}; 
+          safeCategories.forEach(c => counts[c.id] = 0);
+          Object.keys(records).forEach(dateKey => {
+            if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
+            const rec = records[dateKey];
+            if (rec) {
+                Object.values(rec).forEach(colorId => { if (counts[colorId] !== undefined) counts[colorId]++; });
+            }
+          });
+          return counts;
+        };
+        
+        const range = {}; 
+        safeCategories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
+        
+        Object.keys(records).forEach(dateKey => {
+            if (!dateKey) return;
+            const parts = dateKey.split('-');
+            if (parts.length < 2) return;
+            const [y, m] = parts.map(Number);
+            const monthVal = y * 12 + (m - 1); 
+            const monthStr = `${y}.${String(m).padStart(2, '0')}`;
 
-        const rec = records[dateKey];
-        if (rec) {
-             Object.values(rec).forEach(colorId => {
-                  if (range[colorId]) {
-                      range[colorId].hasData = true;
-                      if (monthVal < range[colorId].minVal) { range[colorId].minVal = monthVal; range[colorId].min = monthStr; }
-                      if (monthVal > range[colorId].maxVal) { range[colorId].maxVal = monthVal; range[colorId].max = monthStr; }
-                  }
-             });
-        }
-    });
+            const rec = records[dateKey];
+            if (rec) {
+                 Object.values(rec).forEach(colorId => {
+                      if (range[colorId]) {
+                          range[colorId].hasData = true;
+                          if (monthVal < range[colorId].minVal) { range[colorId].minVal = monthVal; range[colorId].min = monthStr; }
+                          if (monthVal > range[colorId].maxVal) { range[colorId].maxVal = monthVal; range[colorId].max = monthStr; }
+                      }
+                 });
+            }
+        });
 
-    const currentCounts = calcCounts(currentMonthKey);
-    const maxCount = Math.max(1, ...Object.values(currentCounts));
-    return { currentCounts, prevCounts: calcCounts(prevMonthKey), totalCounts: calcCounts(null), maxCount, range };
+        const currentCounts = calcCounts(currentMonthKey);
+        const maxCount = Math.max(1, ...Object.values(currentCounts));
+        return { currentCounts, prevCounts: calcCounts(prevMonthKey), totalCounts: calcCounts(null), maxCount, range };
+    } catch(e) {
+        console.error("Stats Error:", e);
+        return { currentCounts: {}, prevCounts: {}, totalCounts: {}, maxCount: 0, range: {} };
+    }
   }, [records, year, month, safeCategories]);
 
   const memoMonthLabel = langKey === 'en' ? t.monthNames[month] : `${month + 1}${t.monthSuffix}`;
@@ -699,11 +705,11 @@ export default function NewCalendarApp() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 px-2 pb-6 outline-none overflow-visible">
+        {/* Content - Click empty space triggers deselect */}
+        <div className="flex-1 px-2 pb-6 outline-none overflow-visible" onClick={() => setSelectedColor(null)}>
           {view === 'calendar' ? (
             <>
-              <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe}>
+              <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe} onClick={(e) => e.stopPropagation()}>
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
                      <div className="grid grid-cols-7 gap-1">
                         {currentWeekLabels.map((day, i) => (<div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>))}
@@ -719,14 +725,17 @@ export default function NewCalendarApp() {
                             
                             const isCurrent = cell.type === 'current';
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
-                            const hasNote = isCurrent && dayNotes[cell.dateKey] && Object.values(dayNotes[cell.dateKey]).some(t => t && t.trim().length > 0);
+                            
+                            // Safe dayNotes Access with Optional Chaining
+                            const cellNotes = dayNotes?.[cell.dateKey];
+                            const hasNote = isCurrent && cellNotes && Object.values(cellNotes).some(t => t && t.trim().length > 0);
                             
                             const longPress = useLongPress(() => {
                                 if (isCurrent) setZoomedDateKey(cell.dateKey);
                             });
 
                             const subCells = [];
-                            const cellRecord = records[cell.dateKey] || {};
+                            const cellRecord = records?.[cell.dateKey] || {};
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
                                const activeCatState = safeCategories.find(c => c.id === colorId);
@@ -745,11 +754,12 @@ export default function NewCalendarApp() {
                                );
                             }
                             
-                            // Color logic
+                            // Color logic: Date & Dash are synchronized
                             const textColor = isTodayDate 
                                 ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') 
                                 : (darkMode ? 'text-slate-200' : 'text-slate-500');
-                            
+                                
+                            // Dash color: if today, use bg-slate-800/100 (matching text block). If normal, use text-slate-200/500 equivalent bg
                             const dashColor = isTodayDate
                                 ? (darkMode ? 'bg-slate-100' : 'bg-slate-800')
                                 : (darkMode ? 'bg-slate-200' : 'bg-slate-500');
@@ -771,7 +781,7 @@ export default function NewCalendarApp() {
                             );
                           })}
                         </div>
-                        <div className={`w-8 flex flex-col items-center justify-center h-20 cursor-text overflow-hidden`} onClick={(e) => { const textarea = e.currentTarget.querySelector('textarea'); if(textarea) textarea.focus(); }}>
+                        <div className={`w-8 flex flex-col items-center justify-center h-20 cursor-text overflow-hidden`} onClick={(e) => { e.stopPropagation(); const textarea = e.currentTarget.querySelector('textarea'); if(textarea) textarea.focus(); }}>
                            <AutoResizingTextarea value={weekNotes[`${year}-${month}-W${weekIndex}`] || ''} onChange={(val) => setWeekNotes({...weekNotes, [`${year}-${month}-W${weekIndex}`]: val})} placeholder={`W${weekIndex + 1}`} isDark={darkMode} />
                         </div>
                       </div>
@@ -780,7 +790,7 @@ export default function NewCalendarApp() {
               </div>
 
               {/* Color Palette */}
-              <div className="mt-6 px-1">
+              <div className="mt-6 px-1" onClick={(e) => e.stopPropagation()}>
                  {/* Header Row: Left(Title+Swap) --- Right(Eraser) */}
                  <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-3">
@@ -829,13 +839,12 @@ export default function NewCalendarApp() {
               </div>
 
               {/* Footer Notes */}
-              <div className="mt-8 mb-4 px-1">
+              <div className="mt-8 mb-4 px-1" onClick={(e) => e.stopPropagation()}>
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span></h3>
                       <div className="flex items-center gap-2">
                         <button onClick={() => toggleReorderMode('note')} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
-                        {reorderMode === 'note' && (<span className={`text-xs font-medium animate-in fade-in slide-in-from-left-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>{t.swapHint}</span>)}
                       </div>
                    </div>
                    <button onClick={handleAddNote} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}><Plus size={12} /></button>
@@ -848,7 +857,7 @@ export default function NewCalendarApp() {
               </div>
             </>
           ) : (
-            <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2">
+            <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2" onClick={(e) => e.stopPropagation()}>
                <div className="flex flex-col h-full gap-2">
                  {safeCategories.map((cat) => {
                     const current = stats.currentCounts[cat.id] || 0;
