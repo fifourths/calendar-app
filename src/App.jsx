@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock, X
+  Globe, AlertTriangle, Clock, X, Eraser
 } from 'lucide-react';
 
 // --- 1. Constants ---
@@ -135,6 +135,31 @@ const BACKUP_REMINDER_DAYS = 7;
 
 // --- 2. Helper Hooks & Functions ---
 
+// Safe LocalStorage Hook to prevent white screens
+function useStickyState(key, defaultValue) {
+  const [value, setValue] = useState(() => {
+    try {
+      const stickyValue = window.localStorage.getItem(key);
+      if (stickyValue !== null && stickyValue !== 'undefined') {
+          const parsed = JSON.parse(stickyValue);
+          // Extra safety: ensure type matches default
+          if (Array.isArray(defaultValue) && !Array.isArray(parsed)) return defaultValue;
+          if (typeof defaultValue === 'object' && !Array.isArray(defaultValue) && (typeof parsed !== 'object' || Array.isArray(parsed))) return defaultValue;
+          return parsed;
+      }
+    } catch (err) {
+      // Ignore write errors
+    }
+    return defaultValue;
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
 const useLongPress = (callback, ms = 500) => {
   const timerRef = useRef(null);
   const isLongPress = useRef(false);
@@ -177,11 +202,13 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
-// Grid Overlay: Forces lines to appear ON TOP of colors
+// Grid Overlay: Draws Border AND Internal Lines ON TOP
 const GridOverlay = ({ gridMode, isDark }) => {
   const lineColor = isDark ? 'bg-slate-600' : 'bg-slate-300';
+  const borderColor = isDark ? 'border-slate-600' : 'border-slate-300';
+  
   return (
-    <div className="absolute inset-0 pointer-events-none z-10">
+    <div className={`absolute inset-0 pointer-events-none z-10 rounded-lg border ${borderColor}`}>
        {/* Horizontal Line (Shared) */}
        <div className={`absolute top-1/2 left-0 right-0 h-[1px] ${lineColor}`}></div>
        
@@ -385,22 +412,23 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [appTitle, setAppTitle] = useState('My Life Log');
-  const [gridMode, setGridMode] = useState(4); 
+  
+  // USE STICKY STATE WITH LAZY INIT (Fixes White Screen)
+  const [appTitle, setAppTitle] = useStickyState('v74_title', 'My Life Log');
+  const [gridMode, setGridMode] = useStickyState('v74_gridMode', 4);
+  const [categories, setCategories] = useStickyState('v74_categories', INITIAL_CATEGORIES);
+  const [records, setRecords] = useStickyState('v74_records', {});
+  const [weekNotes, setWeekNotes] = useStickyState('v74_weekNotes', {});
+  const [dayNotes, setDayNotes] = useStickyState('v74_dayNotes', {});
+  const [allFooterNotes, setAllFooterNotes] = useStickyState('v74_allFooterNotes', {});
+  const [langIndex, setLangIndex] = useStickyState('v74_langIndex', 0);
+  const [darkMode, setDarkMode] = useStickyState('v74_darkMode', false);
+  const [lastBackupDate, setLastBackupDate] = useStickyState('v74_lastBackupDate', null);
+  
   const [view, setView] = useState('calendar'); 
-  const [langIndex, setLangIndex] = useState(0); 
-  
-  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [zoomedDateKey, setZoomedDateKey] = useState(null); 
-  
-  const [records, setRecords] = useState({});
-  const [weekNotes, setWeekNotes] = useState({});
-  const [allFooterNotes, setAllFooterNotes] = useState({});
-  const [dayNotes, setDayNotes] = useState({}); 
   
   const [selectedColor, setSelectedColor] = useState(null);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
@@ -411,8 +439,6 @@ export default function NewCalendarApp() {
 
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
-
-  const [lastBackupDate, setLastBackupDate] = useState(null);
 
   // Auto-Inject Icon
   useEffect(() => {
@@ -430,55 +456,6 @@ export default function NewCalendarApp() {
     const timer = setTimeout(injectIcon, 1000);
     return () => clearTimeout(timer);
   }, []);
-
-  // CRITICAL FIX: Robust Persistence Loading
-  // This ensures no state becomes NULL, preventing white screens
-  useEffect(() => {
-    const load = (key, setter, defaultVal) => { 
-        const saved = localStorage.getItem(`calendar_app_v73_${key}`); 
-        if (saved) { 
-            try { 
-                const parsed = JSON.parse(saved);
-                // Force use fallback if parsed is null (crucial fix)
-                setter(parsed === null ? defaultVal : parsed); 
-            } catch (e) { 
-                if(defaultVal !== undefined) setter(defaultVal); 
-            } 
-        } else if (defaultVal !== undefined) { 
-            setter(defaultVal); 
-        } 
-    };
-    
-    load('title', setAppTitle, 'My Life Log');
-    load('gridMode', setGridMode, 4);
-    load('categories', setCategories, INITIAL_CATEGORIES);
-    load('records', setRecords, {});
-    load('weekNotes', setWeekNotes, {});
-    load('dayNotes', setDayNotes, {});
-    load('langIndex', setLangIndex, 0);
-    load('darkMode', setDarkMode, false);
-    load('lastBackupDate', setLastBackupDate, null);
-    
-    const savedNewNotes = localStorage.getItem('calendar_app_v73_allFooterNotes');
-    if (savedNewNotes) {
-        try {
-            setAllFooterNotes(JSON.parse(savedNewNotes) || {});
-        } catch(e) { setAllFooterNotes({}); }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('calendar_app_v73_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v73_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v73_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v73_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v73_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v73_dayNotes', JSON.stringify(dayNotes));
-    localStorage.setItem('calendar_app_v73_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v73_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v73_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v73_lastBackupDate', JSON.stringify(lastBackupDate));
-  }, [appTitle, gridMode, categories, records, weekNotes, dayNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); 
@@ -521,14 +498,30 @@ export default function NewCalendarApp() {
 
   const handleCellClick = (dateKey, subIndex, isLongPress) => {
     if (isLongPress) return;
+    
+    // Eraser Mode logic: if selectedColor is null, we are NOT in eraser mode UNLESS explicitly set? 
+    // Wait, the requirement says "Eraser icon" -> "Click to deselect or clear?"
+    // User logic: "New eraser icon... click to set selectedColor to null". 
+    // If selectedColor is null, clicking a cell currently DOES NOTHING (protection).
+    // BUT for eraser, we want to clear.
+    // Let's interpret: Normal Mode: selectedColor = 'red'. Eraser Mode: selectedColor = 'eraser_token' or just null?
+    // If we use null for "nothing selected", we need a way to distinguish "Nothing Selected" vs "Eraser Selected".
+    // Simple fix: Logic is `if (selectedColor === null) return`. 
+    // Let's introduce a special ID for Eraser: 'ERASER'.
+    
     if (selectedColor === null) return;
     
     const currentRecord = records[dateKey] || {};
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
     
-    if (currentColor === selectedColor) delete newRecord[subIndex]; 
-    else newRecord[subIndex] = selectedColor; 
+    if (selectedColor === 'ERASER') {
+        if (currentColor) delete newRecord[subIndex];
+    } else {
+        // Toggle logic
+        if (currentColor === selectedColor) delete newRecord[subIndex]; 
+        else newRecord[subIndex] = selectedColor; 
+    }
     
     setRecords(prev => ({ ...prev, [dateKey]: newRecord }));
   };
@@ -569,7 +562,7 @@ export default function NewCalendarApp() {
         if (typeof data !== 'object') throw new Error('Invalid format');
         if (data.appTitle) setAppTitle(data.appTitle);
         if (data.gridMode) setGridMode(data.gridMode);
-        if (data.categories) setCategories(data.categories);
+        if (data.categories && Array.isArray(data.categories)) setCategories(data.categories);
         if (data.records) setRecords(data.records);
         if (data.weekNotes) setWeekNotes(data.weekNotes);
         if (data.dayNotes) setDayNotes(data.dayNotes);
@@ -620,7 +613,6 @@ export default function NewCalendarApp() {
   for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
 
   const stats = useMemo(() => {
-    // Safety check: if records or categories are null/undefined, return empty stats
     if (!records || !categories) return { currentCounts: {}, prevCounts: {}, totalCounts: {}, maxCount: 0, range: {} };
 
     const currentMonthKey = getMonthKey(year, month);
@@ -630,7 +622,6 @@ export default function NewCalendarApp() {
     const calcCounts = (monthKeyFilter = null) => {
       const counts = {}; 
       categories.forEach(c => counts[c.id] = 0);
-      
       Object.keys(records).forEach(dateKey => {
         if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
         const rec = records[dateKey];
@@ -761,27 +752,35 @@ export default function NewCalendarApp() {
                                  />
                                );
                             }
+                            
+                            // Color logic for Date & Dash
+                            const textColor = isTodayDate 
+                                ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') 
+                                : (darkMode ? 'text-slate-200' : 'text-slate-500');
+                            
+                            const dashColor = isTodayDate
+                                ? (darkMode ? 'bg-slate-100' : 'bg-slate-800')
+                                : (darkMode ? 'bg-slate-200' : 'bg-slate-500');
 
                             return (
                               <div key={dayIndex} 
-                                   // Visual: Outer Border
-                                   className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ring-1 ring-inset ${isCurrent ? (darkMode ? 'bg-slate-800 ring-slate-500' : 'bg-white ring-slate-400') : (darkMode ? 'bg-slate-800/30 ring-slate-800 opacity-40' : 'bg-white/50 ring-slate-200 opacity-40')}`}
+                                   className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ${isCurrent ? (darkMode ? 'bg-slate-800' : 'bg-white') : (darkMode ? 'bg-slate-800/30 opacity-40' : 'bg-white/50 opacity-40')}`}
                                    {...(isCurrent ? longPress.handlers : {})}
                               >
-                                 {/* Grid Lines Overlay - Ensures lines are ON TOP of colors */}
+                                 {/* Border & Lines Overlay (Z-10) */}
                                  <GridOverlay gridMode={gridMode} isDark={darkMode} />
                                  
-                                 {/* Color Cells */}
+                                 {/* Color Cells (Z-0) */}
                                  <div className={`flex-1 grid w-full h-full gap-0 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
                                  
-                                 {/* Date Number - Dark Mode Lighter Color Fixed */}
+                                 {/* Date Number (Z-20) */}
                                  <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-20">
-                                   <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${isTodayDate ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') : (darkMode ? 'text-slate-200' : 'text-slate-500')}`}>{cell.day}</span>
+                                   <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${textColor}`}>{cell.day}</span>
                                  </div>
                                  
-                                 {/* Note Indicator */}
+                                 {/* Note Indicator (Z-20) */}
                                  {hasNote && (
-                                     <div className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-2 h-0.5 rounded-full z-20 ${darkMode ? 'bg-slate-400' : 'bg-slate-400'}`}></div>
+                                     <div className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-2 h-0.5 rounded-full z-20 ${dashColor}`}></div>
                                  )}
                               </div>
                             );
@@ -797,16 +796,31 @@ export default function NewCalendarApp() {
 
               {/* Color Palette */}
               <div className="mt-6 px-1">
-                 <div className="flex items-center justify-start gap-2 mb-3">
-                    <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{t.categoryHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span></h3>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => toggleReorderMode('color')} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
-                      {reorderMode === 'color' && (<span className={`text-xs font-medium animate-in fade-in slide-in-from-left-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>{t.swapHint}</span>)}
+                 <div className="flex items-center justify-between mb-3 px-1">
+                    <h3 className={`text-[10px] font-bold uppercase tracking-widest flex items-center ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                        {t.categoryHeader} 
+                        <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span>
+                    </h3>
+                    <div className="flex items-center gap-3">
+                        {/* Eraser Tool */}
+                        <button 
+                            onClick={() => setSelectedColor(prev => prev === 'ERASER' ? null : 'ERASER')}
+                            className={`p-1.5 rounded-full transition-all ${selectedColor === 'ERASER' ? (darkMode ? 'bg-slate-600 text-white ring-1 ring-slate-400' : 'bg-slate-800 text-white ring-1 ring-slate-600') : (darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
+                            title="Eraser"
+                        >
+                            <Eraser size={14} />
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => toggleReorderMode('color')} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
+                          {reorderMode === 'color' && (<span className={`text-xs font-medium animate-in fade-in slide-in-from-left-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>{t.swapHint}</span>)}
+                        </div>
                     </div>
                  </div>
                  <div className="grid grid-cols-3 gap-3">
                     {categories.map((cat) => {
                       const style = COLOR_DEFINITIONS[cat.id] || FALLBACK_COLOR;
+                      const isSelected = selectedColor === cat.id;
                       return (
                       <div 
                         key={cat.id} 
@@ -816,7 +830,8 @@ export default function NewCalendarApp() {
                            flex items-center gap-3 p-2 rounded-2xl border transition-all cursor-pointer outline-none select-none relative
                            ${reorderMode === 'color' ? (darkMode ? 'border-dashed border-blue-800' : 'border-dashed border-blue-200') : ''}
                            ${swapSourceId === cat.id ? (darkMode ? 'bg-blue-900/20 ring-2 ring-blue-700' : 'bg-blue-50 ring-2 ring-blue-300') : ''}
-                           ${!reorderMode && selectedColor === cat.id ? (darkMode ? 'border-slate-100 bg-slate-800 shadow-md scale-[1.02]' : 'border-slate-800 bg-white shadow-md scale-[1.02]') : (darkMode ? 'border-slate-800 bg-slate-800 hover:border-slate-600' : 'border-slate-100 bg-white hover:border-slate-300')}
+                           ${!reorderMode && isSelected ? (darkMode ? 'border-slate-100 bg-slate-800 shadow-md scale-[1.02]' : 'border-slate-800 bg-white shadow-md scale-[1.02]') : (darkMode ? 'border-slate-800 bg-slate-800 hover:border-slate-600' : 'border-slate-100 bg-white hover:border-slate-300')}
+                           ${selectedColor === 'ERASER' ? 'opacity-50' : 'opacity-100'}
                         `}
                       >
                          <div className={`w-6 h-6 rounded-full flex-shrink-0 ring-1 shadow-inner ${darkMode ? style.dark + ' ring-white/10' : style.light + ' ring-black/5'}`}></div>
