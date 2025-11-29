@@ -206,11 +206,9 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
-// UPDATED: Grid Overlay (Darker Outer Border, Lighter Inner Lines)
+// UPDATED: Grid Overlay
 const GridOverlay = ({ gridMode, isDark }) => {
-  // Inner lines: lighter
   const lineColor = isDark ? 'bg-slate-700' : 'bg-slate-200';
-  // Outer border: darker (visible even if bg color is filled)
   const borderColor = isDark ? 'border-slate-500' : 'border-slate-400';
   
   return (
@@ -602,8 +600,12 @@ export default function NewCalendarApp() {
   const weeks = [];
   for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
 
-  // SAFE RENDER: Ensure categories is an array before using
-  const safeCategories = Array.isArray(categories) ? categories : INITIAL_CATEGORIES;
+  // --- CRASH FIX: Ensure categories are always valid before using in stats/render ---
+  const safeCategories = useMemo(() => {
+    if (!Array.isArray(categories)) return INITIAL_CATEGORIES;
+    const valid = categories.filter(c => c && typeof c.id === 'string');
+    return valid.length > 0 ? valid : INITIAL_CATEGORIES;
+  }, [categories]);
 
   const stats = useMemo(() => {
     try {
@@ -709,7 +711,8 @@ export default function NewCalendarApp() {
         <div className="flex-1 px-2 pb-6 outline-none overflow-visible" onClick={() => setSelectedColor(null)}>
           {view === 'calendar' ? (
             <>
-              <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe} onClick={(e) => e.stopPropagation()}>
+              {/* FIXED: Removed e.stopPropagation() here so clicks on empty space bubble up to deselect */}
+              <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe}>
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
                      <div className="grid grid-cols-7 gap-1">
                         {currentWeekLabels.map((day, i) => (<div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>))}
@@ -725,8 +728,6 @@ export default function NewCalendarApp() {
                             
                             const isCurrent = cell.type === 'current';
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
-                            
-                            // Safe dayNotes Access with Optional Chaining
                             const cellNotes = dayNotes?.[cell.dateKey];
                             const hasNote = isCurrent && cellNotes && Object.values(cellNotes).some(t => t && t.trim().length > 0);
                             
@@ -754,12 +755,10 @@ export default function NewCalendarApp() {
                                );
                             }
                             
-                            // Color logic: Date & Dash are synchronized
                             const textColor = isTodayDate 
                                 ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') 
                                 : (darkMode ? 'text-slate-200' : 'text-slate-500');
                                 
-                            // Dash color: if today, use bg-slate-800/100 (matching text block). If normal, use text-slate-200/500 equivalent bg
                             const dashColor = isTodayDate
                                 ? (darkMode ? 'bg-slate-100' : 'bg-slate-800')
                                 : (darkMode ? 'bg-slate-200' : 'bg-slate-500');
@@ -789,9 +788,11 @@ export default function NewCalendarApp() {
                   </div>
               </div>
 
-              {/* Color Palette */}
-              <div className="mt-6 px-1" onClick={(e) => e.stopPropagation()}>
-                 {/* Header Row: Left(Title+Swap) --- Right(Eraser) */}
+              {/* FIXED: Separate spacer for clickable area */}
+              <div className="h-6 w-full" /> 
+
+              {/* Color Palette - Keep stopPropagation so clicking buttons doesn't deselect */}
+              <div className="px-1" onClick={(e) => e.stopPropagation()}>
                  <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-3">
                         <h3 className={`text-[10px] font-bold uppercase tracking-widest flex items-center ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
