@@ -6,7 +6,7 @@ import {
   Globe, AlertTriangle, Clock, X, Eraser
 } from 'lucide-react';
 
-// --- 1. Constants ---
+// --- 1. Constants & Helper Functions ---
 
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', pastel: 'bg-red-100',    pastelDark: 'bg-red-900/30' },
@@ -17,7 +17,14 @@ const COLOR_DEFINITIONS = {
   purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', pastel: 'bg-purple-100', pastelDark: 'bg-purple-900/30' },
 };
 
-const FALLBACK_COLOR = { light: 'bg-gray-300', dark: 'bg-gray-600', pastel: 'bg-gray-100', pastelDark: 'bg-gray-800' };
+const FALLBACK_COLOR = { 
+  id: 'gray', light: 'bg-slate-300', dark: 'bg-slate-600', pastel: 'bg-slate-100', pastelDark: 'bg-slate-800' 
+};
+
+// CRASH FIX: 安全獲取顏色的函數，避免 ID 不存在時崩潰
+const getColorDef = (id) => {
+  return (id && COLOR_DEFINITIONS[id]) ? COLOR_DEFINITIONS[id] : FALLBACK_COLOR;
+};
 
 const INITIAL_CATEGORIES = [
   { id: 'red', defaultLabel: '重要' },
@@ -133,9 +140,8 @@ const DEFAULT_NOTES = [
 
 const BACKUP_REMINDER_DAYS = 7;
 
-// --- 2. Helper Hooks & Functions ---
+// --- 2. Helper Hooks ---
 
-// Robust Storage Hook to Prevent Crashes
 function useStickyState(key, defaultValue) {
   const [value, setValue] = useState(() => {
     if (typeof window === 'undefined') return defaultValue;
@@ -167,31 +173,16 @@ function useStickyState(key, defaultValue) {
 const useLongPress = (callback, ms = 500) => {
   const timerRef = useRef(null);
   const isLongPress = useRef(false);
-
   const start = useCallback(() => {
     isLongPress.current = false;
-    timerRef.current = setTimeout(() => {
-      isLongPress.current = true;
-      callback();
-    }, ms);
+    timerRef.current = setTimeout(() => { isLongPress.current = true; callback(); }, ms);
   }, [callback, ms]);
-
   const stop = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
     setTimeout(() => { isLongPress.current = false; }, 50);
   }, []);
-
   return {
-    handlers: {
-      onTouchStart: start,
-      onTouchEnd: stop,
-      onMouseDown: start,
-      onMouseUp: stop,
-      onMouseLeave: stop
-    },
+    handlers: { onTouchStart: start, onTouchEnd: stop, onMouseDown: start, onMouseUp: stop, onMouseLeave: stop },
     isLongPress
   };
 };
@@ -206,11 +197,9 @@ const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0
 
 // --- 3. Sub-Components ---
 
-// UPDATED: Grid Overlay
 const GridOverlay = ({ gridMode, isDark }) => {
   const lineColor = isDark ? 'bg-slate-700' : 'bg-slate-200';
   const borderColor = isDark ? 'border-slate-500' : 'border-slate-400';
-  
   return (
     <div className={`absolute inset-0 pointer-events-none z-10 rounded-lg border ${borderColor}`}>
        <div className={`absolute top-1/2 left-0 right-0 h-[1px] ${lineColor}`}></div>
@@ -262,7 +251,7 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
   for (let i = 0; i < gridMode; i++) {
     const colorId = cellRecord[i];
     const cat = categories.find(c => c.id === colorId);
-    const style = cat && COLOR_DEFINITIONS[cat.id] ? COLOR_DEFINITIONS[cat.id] : FALLBACK_COLOR;
+    const style = getColorDef(cat?.id);
     const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
     
     cells.push(
@@ -410,20 +399,17 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // SAFE STORAGE: Changing key to 'v76' forces a clean slate to avoid existing corrupt data
-  const [appTitle, setAppTitle] = useStickyState('v76_title', 'My Life Log');
-  const [gridMode, setGridMode] = useStickyState('v76_gridMode', 4);
-  
-  // SAFETY: Ensure default is always an array
-  const [categories, setCategories] = useStickyState('v76_categories', INITIAL_CATEGORIES);
-  
-  const [records, setRecords] = useStickyState('v76_records', {});
-  const [weekNotes, setWeekNotes] = useStickyState('v76_weekNotes', {});
-  const [dayNotes, setDayNotes] = useStickyState('v76_dayNotes', {});
-  const [allFooterNotes, setAllFooterNotes] = useStickyState('v76_allFooterNotes', {});
-  const [langIndex, setLangIndex] = useStickyState('v76_langIndex', 0);
-  const [darkMode, setDarkMode] = useStickyState('v76_darkMode', false);
-  const [lastBackupDate, setLastBackupDate] = useStickyState('v76_lastBackupDate', null);
+  // SAFE STORAGE: Changing key to 'v77' forces a clean slate to fix deep data corruption
+  const [appTitle, setAppTitle] = useStickyState('v77_title', 'My Life Log');
+  const [gridMode, setGridMode] = useStickyState('v77_gridMode', 4);
+  const [categories, setCategories] = useStickyState('v77_categories', INITIAL_CATEGORIES);
+  const [records, setRecords] = useStickyState('v77_records', {});
+  const [weekNotes, setWeekNotes] = useStickyState('v77_weekNotes', {});
+  const [dayNotes, setDayNotes] = useStickyState('v77_dayNotes', {});
+  const [allFooterNotes, setAllFooterNotes] = useStickyState('v77_allFooterNotes', {});
+  const [langIndex, setLangIndex] = useStickyState('v77_langIndex', 0);
+  const [darkMode, setDarkMode] = useStickyState('v77_darkMode', false);
+  const [lastBackupDate, setLastBackupDate] = useStickyState('v77_lastBackupDate', null);
   
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -671,11 +657,16 @@ export default function NewCalendarApp() {
       .hoverable:active { transform: scale(0.95); transition: transform 0.1s; }
     `}} />
 
+    {/* ROOT CONTAINER: Handles the click-to-deselect logic */}
     <div 
       onClick={handleBackgroundClick} 
       className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}
     >
-      <div className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px] ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}`} onClick={(e) => e.stopPropagation()}>
+      {/* MAIN CARD: Stop Propagation removed to allow deselect on background click, OR added explicit handler */}
+      <div 
+        className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px] ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}`} 
+        onClick={(e) => e.stopPropagation()} // Keep this to prevent closing if this were a modal, BUT...
+      >
         
         {/* Modals */}
         {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
@@ -707,11 +698,11 @@ export default function NewCalendarApp() {
           </div>
         </div>
 
-        {/* Content - Click empty space triggers deselect */}
+        {/* Content - Click empty space triggers deselect (Added explicit handler here to be safe) */}
         <div className="flex-1 px-2 pb-6 outline-none overflow-visible" onClick={() => setSelectedColor(null)}>
           {view === 'calendar' ? (
             <>
-              {/* FIXED: Removed e.stopPropagation() here so clicks on empty space bubble up to deselect */}
+              {/* Calendar Grid Area */}
               <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe}>
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
                      <div className="grid grid-cols-7 gap-1">
@@ -740,8 +731,8 @@ export default function NewCalendarApp() {
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
                                const activeCatState = safeCategories.find(c => c.id === colorId);
-                               const activeStyle = activeCatState ? COLOR_DEFINITIONS[activeCatState.id] : null;
-                               const finalColor = activeStyle ? (darkMode ? activeStyle.dark : activeStyle.light) : 'bg-transparent';
+                               const style = getColorDef(activeCatState?.id);
+                               const finalColor = activeCatState ? (darkMode ? style.dark : style.light) : 'bg-transparent';
                                subCells.push(
                                  <div 
                                     key={i} 
@@ -788,22 +779,22 @@ export default function NewCalendarApp() {
                   </div>
               </div>
 
-              {/* FIXED: Separate spacer for clickable area */}
+              {/* Spacer for easy deselect click */}
               <div className="h-6 w-full" /> 
 
-              {/* Color Palette - Keep stopPropagation so clicking buttons doesn't deselect */}
-              <div className="px-1" onClick={(e) => e.stopPropagation()}>
+              {/* Color Palette - Removed e.stopPropagation so clicking gaps deselects */}
+              <div className="px-1">
                  <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-3">
                         <h3 className={`text-[10px] font-bold uppercase tracking-widest flex items-center ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                             {t.categoryHeader} 
                             <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span>
                         </h3>
-                        <button onClick={() => toggleReorderMode('color')} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); toggleReorderMode('color'); }} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
                     </div>
 
                     <button 
-                        onClick={() => setSelectedColor(prev => prev === 'ERASER' ? null : 'ERASER')}
+                        onClick={(e) => { e.stopPropagation(); setSelectedColor(prev => prev === 'ERASER' ? null : 'ERASER'); }}
                         className={`p-1.5 rounded-full transition-all ${selectedColor === 'ERASER' ? (darkMode ? 'bg-slate-600 text-white ring-1 ring-slate-400' : 'bg-slate-800 text-white ring-1 ring-slate-600') : (darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
                         title="Eraser"
                     >
@@ -813,7 +804,7 @@ export default function NewCalendarApp() {
 
                  <div className="grid grid-cols-3 gap-3">
                     {safeCategories.map((cat) => {
-                      const style = COLOR_DEFINITIONS[cat.id] || FALLBACK_COLOR;
+                      const style = getColorDef(cat.id);
                       const isSelected = selectedColor === cat.id;
                       return (
                       <div 
@@ -839,16 +830,16 @@ export default function NewCalendarApp() {
                  </div>
               </div>
 
-              {/* Footer Notes */}
-              <div className="mt-8 mb-4 px-1" onClick={(e) => e.stopPropagation()}>
+              {/* Footer Notes - Removed e.stopPropagation */}
+              <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span></h3>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => toggleReorderMode('note')} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); toggleReorderMode('note'); }} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
                       </div>
                    </div>
-                   <button onClick={handleAddNote} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}><Plus size={12} /></button>
+                   <button onClick={(e) => { e.stopPropagation(); handleAddNote(); }} className={`p-1 rounded-full transition-colors outline-none ${darkMode ? 'text-slate-500 hover:text-slate-300 bg-slate-800' : 'text-slate-400 hover:text-slate-800 bg-slate-100'}`}><Plus size={12} /></button>
                  </div>
                  <div className="space-y-4">
                     {footerNotes.map((note, idx) => (
@@ -865,11 +856,13 @@ export default function NewCalendarApp() {
                     const prev = stats.prevCounts[cat.id] || 0;
                     const diff = current - prev;
                     const barWidth = stats.maxCount > 0 ? (current / stats.maxCount) * 100 : 0;
-                    const rangeInfo = stats.range[cat.id];
-                    const style = COLOR_DEFINITIONS[cat.id] || FALLBACK_COLOR;
+                    
+                    // CRASH FIX: Use safe access/default for rangeInfo
+                    const rangeInfo = stats.range[cat.id] || { hasData: false, minVal: 0, maxVal: 0 };
+                    const style = getColorDef(cat.id);
                     
                     let freqText = `0${t.perMonth}`;
-                    if (rangeInfo && rangeInfo.hasData) {
+                    if (rangeInfo.hasData) {
                         const monthsDiff = (rangeInfo.maxVal - rangeInfo.minVal) + 1;
                         const total = stats.totalCounts[cat.id] || 0; 
                         const avg = Math.floor(total / Math.max(1, monthsDiff));
@@ -888,7 +881,7 @@ export default function NewCalendarApp() {
                          <div className="flex-1 flex flex-col justify-center gap-1.5">
                             <div className="flex justify-between items-end"><span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t.statsFreq}: {freqText}</span><span className={`text-[10px] font-bold ${diffColorClass}`}>{diff >= 0 ? (diff > 0 ? '▲' : '-') : '▼'} {Math.abs(diff)} {t.statsVsLast}</span></div>
                             <div className={`h-1.5 w-full rounded-full overflow-hidden relative ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}><div className={`h-full rounded-full transition-all duration-500 ease-out ${darkMode ? style.dark : style.light}`} style={{ width: `${Math.max(barWidth, 2)}%` }}></div></div>
-                            <div className="flex justify-end items-center"><span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsTotal}: {stats.totalCounts[cat.id] || 0}{rangeInfo && rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}</span></div>
+                            <div className="flex justify-end items-center"><span className={`text-[9px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsTotal}: {stats.totalCounts[cat.id] || 0}{rangeInfo.hasData && <span className="opacity-70 ml-1">({rangeInfo.min} ~ {rangeInfo.max})</span>}</span></div>
                          </div>
                       </div>
                     )
