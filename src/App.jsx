@@ -6,7 +6,7 @@ import {
   Globe, AlertTriangle, Clock, X
 } from 'lucide-react';
 
-// --- 1. Constants (Moved outside to prevent re-creation) ---
+// --- 1. Constants ---
 
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', pastel: 'bg-red-100',    pastelDark: 'bg-red-900/30' },
@@ -16,6 +16,9 @@ const COLOR_DEFINITIONS = {
   blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   pastel: 'bg-blue-100',   pastelDark: 'bg-blue-900/30' },
   purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', pastel: 'bg-purple-100', pastelDark: 'bg-purple-900/30' },
 };
+
+// Fallback style to prevent crashes if color ID is missing
+const FALLBACK_COLOR = { light: 'bg-gray-300', dark: 'bg-gray-600', pastel: 'bg-gray-100', pastelDark: 'bg-gray-800' };
 
 const INITIAL_CATEGORIES = [
   { id: 'red', defaultLabel: '重要' },
@@ -133,7 +136,7 @@ const BACKUP_REMINDER_DAYS = 7;
 
 // --- 2. Helper Hooks & Functions ---
 
-// Custom Hook: Long Press (Optimization)
+// Custom Hook: Long Press
 const useLongPress = (callback, ms = 500) => {
   const timerRef = useRef(null);
   const isLongPress = useRef(false);
@@ -151,7 +154,6 @@ const useLongPress = (callback, ms = 500) => {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    // Delay resetting the flag slightly to block the subsequent 'click'
     setTimeout(() => { isLongPress.current = false; }, 50);
   }, []);
 
@@ -194,7 +196,7 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
       placeholder={placeholder}
       rows={1}
       className={`w-full text-center text-[10px] bg-transparent border-none focus:ring-0 p-0 transition-colors outline-none font-bold resize-none leading-tight overflow-hidden whitespace-pre-wrap break-all ${isDark ? 'text-slate-400 placeholder-slate-700' : 'text-slate-600 placeholder-slate-200'}`}
-      style={{ height: 'auto' }}
+      style={{ height: 'auto', touchAction: 'manipulation' }}
     />
   );
 };
@@ -202,14 +204,20 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
 const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, isDark, t }) => {
   const cellRecord = records[dateKey] || {};
   const currentNotes = dayNotes[dateKey] || {};
-  const [y, m, d] = dateKey.split('-'); // Safer parsing
-  const title = `${y}/${parseInt(m)}/${parseInt(d)}`;
+  
+  // Safe Date Parsing
+  let title = dateKey;
+  try {
+      const [y, m, d] = dateKey.split('-');
+      title = `${y}/${parseInt(m)}/${parseInt(d)}`;
+  } catch(e) {}
 
   const cells = [];
   for (let i = 0; i < gridMode; i++) {
     const colorId = cellRecord[i];
     const cat = categories.find(c => c.id === colorId);
-    const bgClass = cat ? (isDark ? COLOR_DEFINITIONS[cat.id].pastelDark : COLOR_DEFINITIONS[cat.id].pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
+    const style = cat && COLOR_DEFINITIONS[cat.id] ? COLOR_DEFINITIONS[cat.id] : FALLBACK_COLOR;
+    const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
     
     cells.push(
       <div key={i} className={`relative p-2 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
@@ -220,7 +228,7 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
           onChange={(e) => onSaveNote(dateKey, i, e.target.value)}
           onClick={(e) => e.stopPropagation()}
         />
-        {cat && (<div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${isDark ? COLOR_DEFINITIONS[cat.id].dark : COLOR_DEFINITIONS[cat.id].light}`}></div>)}
+        {cat && (<div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${isDark ? style.dark : style.light}`}></div>)}
       </div>
     );
   }
@@ -264,7 +272,6 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
   const [mode, setMode] = useState('menu'); 
   const handleFileChange = (e) => { const file = e.target.files[0]; if (file) onImport(file); };
   
-  // Style Helpers
   const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
   const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
   const buttonClass = isDark ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-600';
@@ -400,7 +407,7 @@ export default function NewCalendarApp() {
 
   // Persistence
   useEffect(() => {
-    const load = (key, setter, defaultVal) => { const saved = localStorage.getItem(`calendar_app_v71_${key}`); if (saved) { try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); } } else if (defaultVal !== undefined) { setter(defaultVal); } };
+    const load = (key, setter, defaultVal) => { const saved = localStorage.getItem(`calendar_app_v72_${key}`); if (saved) { try { setter(JSON.parse(saved)); } catch (e) { if(defaultVal) setter(defaultVal); } } else if (defaultVal !== undefined) { setter(defaultVal); } };
     load('title', setAppTitle);
     load('gridMode', setGridMode);
     load('categories', setCategories, INITIAL_CATEGORIES);
@@ -411,21 +418,21 @@ export default function NewCalendarApp() {
     load('darkMode', setDarkMode, false);
     load('lastBackupDate', setLastBackupDate, null);
     
-    const savedNewNotes = localStorage.getItem('calendar_app_v71_allFooterNotes');
+    const savedNewNotes = localStorage.getItem('calendar_app_v72_allFooterNotes');
     if (savedNewNotes) setAllFooterNotes(JSON.parse(savedNewNotes));
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('calendar_app_v71_title', JSON.stringify(appTitle));
-    localStorage.setItem('calendar_app_v71_gridMode', JSON.stringify(gridMode));
-    localStorage.setItem('calendar_app_v71_categories', JSON.stringify(categories));
-    localStorage.setItem('calendar_app_v71_records', JSON.stringify(records));
-    localStorage.setItem('calendar_app_v71_weekNotes', JSON.stringify(weekNotes));
-    localStorage.setItem('calendar_app_v71_dayNotes', JSON.stringify(dayNotes));
-    localStorage.setItem('calendar_app_v71_allFooterNotes', JSON.stringify(allFooterNotes));
-    localStorage.setItem('calendar_app_v71_langIndex', JSON.stringify(langIndex));
-    localStorage.setItem('calendar_app_v71_darkMode', JSON.stringify(darkMode));
-    localStorage.setItem('calendar_app_v71_lastBackupDate', JSON.stringify(lastBackupDate));
+    localStorage.setItem('calendar_app_v72_title', JSON.stringify(appTitle));
+    localStorage.setItem('calendar_app_v72_gridMode', JSON.stringify(gridMode));
+    localStorage.setItem('calendar_app_v72_categories', JSON.stringify(categories));
+    localStorage.setItem('calendar_app_v72_records', JSON.stringify(records));
+    localStorage.setItem('calendar_app_v72_weekNotes', JSON.stringify(weekNotes));
+    localStorage.setItem('calendar_app_v72_dayNotes', JSON.stringify(dayNotes));
+    localStorage.setItem('calendar_app_v72_allFooterNotes', JSON.stringify(allFooterNotes));
+    localStorage.setItem('calendar_app_v72_langIndex', JSON.stringify(langIndex));
+    localStorage.setItem('calendar_app_v72_darkMode', JSON.stringify(darkMode));
+    localStorage.setItem('calendar_app_v72_lastBackupDate', JSON.stringify(lastBackupDate));
   }, [appTitle, gridMode, categories, records, weekNotes, dayNotes, allFooterNotes, langIndex, darkMode, lastBackupDate]);
 
   const year = currentDate.getFullYear();
@@ -551,7 +558,7 @@ export default function NewCalendarApp() {
     }
   };
 
-  // --- Stats Logic (Optimized for correctness) ---
+  // --- Stats Logic (FIXED & ROBUST) ---
   const calendarDays = useMemo(() => {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month); 
@@ -574,6 +581,7 @@ export default function NewCalendarApp() {
     
     const calcCounts = (monthKeyFilter = null) => {
       const counts = {}; categories.forEach(c => counts[c.id] = 0);
+      if (!records) return counts;
       Object.keys(records).forEach(dateKey => {
         if (monthKeyFilter && !dateKey.startsWith(monthKeyFilter)) return;
         Object.values(records[dateKey]).forEach(colorId => { if (counts[colorId] !== undefined) counts[colorId]++; });
@@ -584,21 +592,24 @@ export default function NewCalendarApp() {
     const range = {}; 
     categories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
     
-    // Parse strings instead of using new Date(dateKey) to avoid timezone issues
-    Object.keys(records).forEach(dateKey => {
-        const [y, m] = dateKey.split('-').map(Number);
-        // Create a comparable value (e.g., 202501 for Jan 2025)
-        const monthVal = y * 12 + (m - 1); 
-        const monthStr = `${y}.${String(m).padStart(2, '0')}`;
+    if (records) {
+      Object.keys(records).forEach(dateKey => {
+          if (!dateKey) return;
+          const parts = dateKey.split('-');
+          if (parts.length < 2) return;
+          const [y, m] = parts.map(Number);
+          const monthVal = y * 12 + (m - 1); 
+          const monthStr = `${y}.${String(m).padStart(2, '0')}`;
 
-        Object.values(records[dateKey]).forEach(colorId => {
-            if (range[colorId]) {
-                range[colorId].hasData = true;
-                if (monthVal < range[colorId].minVal) { range[colorId].minVal = monthVal; range[colorId].min = monthStr; }
-                if (monthVal > range[colorId].maxVal) { range[colorId].maxVal = monthVal; range[colorId].max = monthStr; }
-            }
-        });
-    });
+          Object.values(records[dateKey]).forEach(colorId => {
+              if (range[colorId]) {
+                  range[colorId].hasData = true;
+                  if (monthVal < range[colorId].minVal) { range[colorId].minVal = monthVal; range[colorId].min = monthStr; }
+                  if (monthVal > range[colorId].maxVal) { range[colorId].maxVal = monthVal; range[colorId].max = monthStr; }
+              }
+          });
+      });
+    }
 
     const currentCounts = calcCounts(currentMonthKey);
     const maxCount = Math.max(1, ...Object.values(currentCounts));
@@ -703,10 +714,12 @@ export default function NewCalendarApp() {
 
                             return (
                               <div key={dayIndex} 
-                                   className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ${isCurrent ? (darkMode ? 'bg-slate-800 border border-slate-500' : 'bg-white border border-slate-400') : (darkMode ? 'bg-slate-800/30 border border-slate-800 opacity-40' : 'bg-white/50 border border-slate-200 opacity-40')}`}
+                                   // GAP FIX: Removed 'border', added 'ring-1 ring-inset' to fix gap issue
+                                   className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ring-1 ring-inset ${isCurrent ? (darkMode ? 'bg-slate-800 ring-slate-500' : 'bg-white ring-slate-400') : (darkMode ? 'bg-slate-800/30 ring-slate-800 opacity-40' : 'bg-white/50 ring-slate-200 opacity-40')}`}
                                    {...(isCurrent ? longPress.handlers : {})}
                               >
-                                 <div className={`flex-1 grid ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
+                                 {/* GAP FIX: Added gap-0 to grid */}
+                                 <div className={`flex-1 grid w-full h-full gap-0 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
                                  <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-10">
                                    <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${isTodayDate ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') : (darkMode ? 'text-slate-400' : 'text-slate-500')}`}>{cell.day}</span>
                                  </div>
@@ -736,7 +749,7 @@ export default function NewCalendarApp() {
                  </div>
                  <div className="grid grid-cols-3 gap-3">
                     {categories.map((cat) => {
-                      const style = COLOR_DEFINITIONS[cat.id];
+                      const style = COLOR_DEFINITIONS[cat.id] || FALLBACK_COLOR;
                       return (
                       <div 
                         key={cat.id} 
@@ -788,10 +801,11 @@ export default function NewCalendarApp() {
                     const diff = current - prev;
                     const barWidth = stats.maxCount > 0 ? (current / stats.maxCount) * 100 : 0;
                     const rangeInfo = stats.range[cat.id];
-                    const style = COLOR_DEFINITIONS[cat.id];
+                    const style = COLOR_DEFINITIONS[cat.id] || FALLBACK_COLOR;
+                    
                     let freqText = `0${t.perMonth}`;
                     if (rangeInfo.hasData) {
-                        const monthsDiff = (rangeInfo.maxVal - rangeInfo.minVal) + 1; // Simplified month diff
+                        const monthsDiff = (rangeInfo.maxVal - rangeInfo.minVal) + 1;
                         const total = stats.totalCounts[cat.id]; 
                         const avg = Math.floor(total / Math.max(1, monthsDiff));
                         freqText = `${avg}${t.perMonth}`;
