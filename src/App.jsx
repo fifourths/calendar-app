@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-
 import { 
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
@@ -22,7 +21,6 @@ const FALLBACK_COLOR = {
   id: 'gray', light: 'bg-slate-300', dark: 'bg-slate-600', pastel: 'bg-slate-100', pastelDark: 'bg-slate-800' 
 };
 
-// 安全獲取顏色的函數
 const getColorDef = (id) => {
   return (id && COLOR_DEFINITIONS[id]) ? COLOR_DEFINITIONS[id] : FALLBACK_COLOR;
 };
@@ -142,8 +140,6 @@ const DEFAULT_NOTES = [
 const BACKUP_REMINDER_DAYS = 7;
 
 // --- 2. Helper Hooks ---
-// NOTE: Removed the problematic useLongPress Hook (it caused Hook-order changes when called inside map).
-// We'll implement a stable long-press using a single ref in the component (see below).
 
 function useStickyState(key, defaultValue) {
   const [value, setValue] = useState(() => {
@@ -152,8 +148,6 @@ function useStickyState(key, defaultValue) {
       const item = window.localStorage.getItem(key);
       if (item !== null && item !== 'undefined' && item !== "undefined") {
         const parsed = JSON.parse(item);
-        
-        // 嚴格型別檢查
         if (Array.isArray(defaultValue)) {
             return Array.isArray(parsed) ? parsed : defaultValue;
         }
@@ -187,7 +181,6 @@ const getFirstDayOfMonth = (year, month) => {
 const formatDateKey = (year, month, day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
-// New helpers for next/prev day navigation
 const getNextDayKey = (dateKey) => {
     try {
         const [y, m, d] = dateKey.split('-').map(Number);
@@ -248,21 +241,19 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   );
 };
 
-// DayCardModal with Swipe
 const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, isDark, t }) => {
   const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
   const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
   
-  // Swipe State
   const touchStartX = useRef(null);
   const handleTouchStart = (e) => { touchStartX.current = e.targetTouches[0].clientX; };
   const handleTouchEnd = (e) => {
     if (!touchStartX.current) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
-    if (Math.abs(diff) > 50) { // Threshold for swipe
-        if (diff > 0) onNext(); // Left -> Next
-        else onPrev(); // Right -> Prev
+    if (Math.abs(diff) > 50) { 
+        if (diff > 0) onNext(); 
+        else onPrev(); 
     }
     touchStartX.current = null;
   };
@@ -276,7 +267,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
   const cells = [];
   for (let i = 0; i < gridMode; i++) {
     const colorId = cellRecord[i];
-    // Safety check for category
     const cat = Array.isArray(categories) ? categories.find(c => c.id === colorId) : null;
     const style = getColorDef(cat?.id);
     const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
@@ -429,22 +419,23 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
   );
 };
 
+
 // --- 4. Main Application ---
 
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // SAFE STORAGE: Changed key to 'v79' to ensure clean data for testing fixes
-  const [appTitle, setAppTitle] = useStickyState('v79_title', 'My Life Log');
-  const [gridMode, setGridMode] = useStickyState('v79_gridMode', 4);
-  const [categories, setCategories] = useStickyState('v79_categories', INITIAL_CATEGORIES);
-  const [records, setRecords] = useStickyState('v79_records', {});
-  const [weekNotes, setWeekNotes] = useStickyState('v79_weekNotes', {});
-  const [dayNotes, setDayNotes] = useStickyState('v79_dayNotes', {});
-  const [allFooterNotes, setAllFooterNotes] = useStickyState('v79_allFooterNotes', {});
-  const [langIndex, setLangIndex] = useStickyState('v79_langIndex', 0);
-  const [darkMode, setDarkMode] = useStickyState('v79_darkMode', false);
-  const [lastBackupDate, setLastBackupDate] = useStickyState('v79_lastBackupDate', null);
+  // SAFE STORAGE: Changing key to 'v80' to ensure fresh, safe data
+  const [appTitle, setAppTitle] = useStickyState('v80_title', 'My Life Log');
+  const [gridMode, setGridMode] = useStickyState('v80_gridMode', 4);
+  const [categories, setCategories] = useStickyState('v80_categories', INITIAL_CATEGORIES);
+  const [records, setRecords] = useStickyState('v80_records', {});
+  const [weekNotes, setWeekNotes] = useStickyState('v80_weekNotes', {});
+  const [dayNotes, setDayNotes] = useStickyState('v80_dayNotes', {});
+  const [allFooterNotes, setAllFooterNotes] = useStickyState('v80_allFooterNotes', {});
+  const [langIndex, setLangIndex] = useStickyState('v80_langIndex', 0);
+  const [darkMode, setDarkMode] = useStickyState('v80_darkMode', false);
+  const [lastBackupDate, setLastBackupDate] = useStickyState('v80_lastBackupDate', null);
   
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -458,11 +449,34 @@ export default function NewCalendarApp() {
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
 
-  // pressTimerRef for stable long-press handling (top-level ref; safe to use in render)
-  const pressTimerRef = useRef(null);
-
+  // --- SWIPE LOGIC (Main Calendar) ---
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
+  const onTouchStartSwipe = (e) => { touchStartX.current = e.targetTouches[0].clientX; touchEndX.current = null; };
+  const onTouchMoveSwipe = (e) => { touchEndX.current = e.targetTouches[0].clientX; };
+  const onTouchEndSwipe = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    touchStartX.current = null; touchEndX.current = null;
+    if (distance > 100) handleNextMonth();
+    if (distance < -100) handlePrevMonth();
+  };
+
+  // --- LONG PRESS LOGIC (Without Hook, using Ref to avoid crashes) ---
+  const longPressTimer = useRef(null);
+
+  const startLongPress = (dateKey) => {
+    longPressTimer.current = setTimeout(() => {
+        setZoomedDateKey(dateKey);
+    }, 500); // 500ms long press
+  };
+
+  const cancelLongPress = () => {
+     if (longPressTimer.current) {
+         clearTimeout(longPressTimer.current);
+         longPressTimer.current = null;
+     }
+  };
 
   // Auto-Inject Icon
   useEffect(() => {
@@ -505,37 +519,11 @@ export default function NewCalendarApp() {
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const handleJumpToToday = (e) => { e.stopPropagation(); setCurrentDate(new Date()); };
 
-  // Stable Long-Press helpers (top-level functions using ref)
-  const startLongPress = (callback, ms = 500) => {
-    try {
-      if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
-    } catch (e) {}
-    pressTimerRef.current = setTimeout(() => {
-      try { callback(); } catch(e) {}
-      pressTimerRef.current = null;
-    }, ms);
-  };
-  const cancelLongPress = () => {
-    if (pressTimerRef.current) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null; }
-  };
-
-  // Swipe Logic
-  const onTouchStartSwipe = (e) => { touchStartX.current = e.targetTouches[0].clientX; touchEndX.current = null; };
-  const onTouchMoveSwipe = (e) => { touchEndX.current = e.targetTouches[0].clientX; };
-  const onTouchEndSwipe = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    const distance = touchStartX.current - touchEndX.current;
-    touchStartX.current = null; touchEndX.current = null;
-    if (distance > 100) handleNextMonth();
-    if (distance < -100) handlePrevMonth();
-  };
-
   const handleBackgroundClick = () => setSelectedColor(null);
   const toggleLanguage = () => setLangIndex((prev) => (prev + 1) % 3);
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
-  const handleCellClick = (dateKey, subIndex, isLongPress) => {
-    if (isLongPress) return;
+  const handleCellClick = (dateKey, subIndex) => {
     if (selectedColor === null) return;
     
     // Safety check for records object
@@ -545,7 +533,7 @@ export default function NewCalendarApp() {
     const newRecord = { ...currentRecord };
     
     if (selectedColor === 'ERASER') {
-        if (currentColor !== undefined) delete newRecord[subIndex];
+        if (currentColor) delete newRecord[subIndex];
     } else {
         if (currentColor === selectedColor) delete newRecord[subIndex]; 
         else newRecord[subIndex] = selectedColor; 
@@ -793,7 +781,11 @@ export default function NewCalendarApp() {
                             const cellNotes = dayNotes?.[cell.dateKey];
                             const hasNote = isCurrent && cellNotes && Object.values(cellNotes).some(t => t && t.trim().length > 0);
                             
-                            // Build subcells
+                            // 這裡已經移除了 useLongPress Hook！
+                            // 改用 onTouchStart/onTouchEnd + useRef 實作
+                            const handlePressStart = () => isCurrent && startLongPress(cell.dateKey);
+                            const handlePressEnd = () => cancelLongPress();
+
                             const subCells = [];
                             const cellRecord = (records && records[cell.dateKey]) ? records[cell.dateKey] : {};
                             for (let i = 0; i < gridMode; i++) {
@@ -807,9 +799,7 @@ export default function NewCalendarApp() {
                                     onClick={(e) => { 
                                         if (!isCurrent) return; 
                                         e.stopPropagation(); 
-                                        // normal click — cancel potential long press
-                                        cancelLongPress(); 
-                                        handleCellClick(cell.dateKey, i, false);
+                                        handleCellClick(cell.dateKey, i); 
                                     }}
                                     className={`relative w-full h-full outline-none hoverable ${finalColor} hover:opacity-80`}
                                  />
@@ -824,14 +814,16 @@ export default function NewCalendarApp() {
                                 ? (darkMode ? 'bg-slate-100' : 'bg-slate-800')
                                 : (darkMode ? 'bg-slate-200' : 'bg-slate-500');
 
-                            // Outer cell: handle pointer events for long press to open DayCard
                             return (
                               <div key={dayIndex} 
                                    className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ring-1 ring-inset ${isCurrent ? (darkMode ? 'bg-slate-800 ring-slate-500' : 'bg-white ring-slate-400') : (darkMode ? 'bg-slate-800/30 ring-slate-800 opacity-40' : 'bg-white/50 ring-slate-200 opacity-40')}`}
                                    
-                                   onPointerDown={() => { if (isCurrent) startLongPress(() => setZoomedDateKey(cell.dateKey)); }}
-                                   onPointerUp={cancelLongPress}
-                                   onPointerLeave={cancelLongPress}
+                                   /* 使用簡單事件取代 Hook */
+                                   onTouchStart={handlePressStart}
+                                   onTouchEnd={handlePressEnd}
+                                   onMouseDown={handlePressStart}
+                                   onMouseUp={handlePressEnd}
+                                   onMouseLeave={handlePressEnd}
                               >
                                  <GridOverlay gridMode={gridMode} isDark={darkMode} />
                                  <div className={`flex-1 grid w-full h-full gap-0 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
@@ -904,7 +896,7 @@ export default function NewCalendarApp() {
                  </div>
               </div>
 
-              {/* Footer Notes */}
+              {/* Footer Notes - Removed e.stopPropagation */}
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                    <div className="flex items-center gap-2">
