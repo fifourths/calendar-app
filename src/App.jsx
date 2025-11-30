@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock, X, Eraser, Hand, Info
+  Globe, AlertTriangle, Clock, X, Eraser, Info
 } from 'lucide-react';
 
 // --- 1. Constants & Helper Functions ---
@@ -12,7 +12,7 @@ const COLOR_DEFINITIONS = {
   orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', pastel: 'bg-orange-100', pastelDark: 'bg-orange-900/30' },
   yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', pastel: 'bg-yellow-100', pastelDark: 'bg-yellow-900/30' },
   green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', pastel: 'bg-emerald-100', pastelDark: 'bg-emerald-900/30' },
-  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   pastel: 'bg-blue-100',   pastelDark: 'bg-blue-900/30' },
+  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   pastel: 'bg-blue-100', pastelDark: 'bg-blue-900/30' },
   purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', pastel: 'bg-purple-100', pastelDark: 'bg-purple-900/30' },
 };
 
@@ -64,15 +64,15 @@ const TRANSLATIONS = {
     perMonth: '/ 月',
     monthSuffix: '月',
     dayCardTitle: '詳細記錄',
-    // Guide Translations
-    guideTitle: '歡迎使用',
-    guideStep1Title: '長按編輯',
-    guideStep1Desc: '長按任何日期方格，即可開啟詳細筆記與編輯視窗。',
-    guideStep2Title: '功能選單',
-    guideStep2Desc: '右上角圖示包含：顯示切換、深色模式與詳細統計圖表。',
-    guideStep3Title: '統計解讀',
-    guideStep3Desc: '統計長條圖的長度代表「相對頻率」，次數越多的項目長度越長。',
-    gotIt: '開始使用'
+    // Tutorial
+    tut_welcome_title: '歡迎使用生活紀錄',
+    tut_welcome_msg: '這是一個簡單直觀的習慣追蹤與日記工具。讓我們花一點時間了解如何使用它。',
+    tut_longpress_title: '長按編輯',
+    tut_longpress_msg: '在月曆區域長按任意日期卡片，即可打開詳細視圖，記錄多個類別的打卡與心情筆記。',
+    tut_cats_title: '切換類別',
+    tut_cats_msg: '點擊下方的顏色圓點來選擇當前打卡顏色，或使用「橡皮擦」清除紀錄。雙擊文字可重新命名類別。',
+    tut_finish_btn: '我知道了，開始使用吧！',
+    tut_next_btn: '下一步'
   },
   jp: {
     weekDays: ['月', '火', '水', '木', '金', '土', '日'],
@@ -104,15 +104,15 @@ const TRANSLATIONS = {
     perMonth: '/ 月',
     monthSuffix: '月',
     dayCardTitle: '詳細記録',
-    // Guide Translations
-    guideTitle: 'ようこそ',
-    guideStep1Title: '長押しで編集',
-    guideStep1Desc: '日付を長押しすると、詳細なメモや編集画面が開きます。',
-    guideStep2Title: 'メニュー',
-    guideStep2Desc: '右上のアイコンで、表示切替、ダークモード、統計グラフにアクセスできます。',
-    guideStep3Title: '統計の見方',
-    guideStep3Desc: 'グラフの長さは「相対的な頻度」を表します。回数が多いほどバーが長くなります。',
-    gotIt: '始める'
+     // Tutorial
+    tut_welcome_title: 'ようこそ',
+    tut_welcome_msg: 'シンプルで直感的な習慣トラッカーです。使い方の概要をご案内します。',
+    tut_longpress_title: '長押しで編集',
+    tut_longpress_msg: 'カレンダーの日付を長押しすると、詳細ビューが開き、複数の記録やメモを追加できます。',
+    tut_cats_title: 'カテゴリー選択',
+    tut_cats_msg: '下の色の点をタップして色を選択するか、消しゴムを使用します。ダブルクリックで名前を変更できます。',
+    tut_finish_btn: '始める',
+    tut_next_btn: '次へ'
   },
   en: {
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -145,15 +145,15 @@ const TRANSLATIONS = {
     monthSuffix: '',
     monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     dayCardTitle: 'Details',
-    // Guide Translations
-    guideTitle: 'Welcome',
-    guideStep1Title: 'Long Press to Edit',
-    guideStep1Desc: 'Long press any date cell to open details and add notes.',
-    guideStep2Title: 'Top Menu',
-    guideStep2Desc: 'Access settings, dark mode, and statistics from the top right icons.',
-    guideStep3Title: 'Reading Stats',
-    guideStep3Desc: 'Bar length represents "relative frequency". More frequent habits have longer bars.',
-    gotIt: 'Get Started'
+     // Tutorial
+    tut_welcome_title: 'Welcome',
+    tut_welcome_msg: 'A simple habit tracker and journal. Let\'s take a quick tour.',
+    tut_longpress_title: 'Long Press to Edit',
+    tut_longpress_msg: 'Long press any date card in the calendar to open the detailed view for notes and multiple records.',
+    tut_cats_title: 'Select Categories',
+    tut_cats_msg: 'Tap the color dots below to select a category, or use the Eraser. Double click text to rename.',
+    tut_finish_btn: 'Got it, Let\'s Start!',
+    tut_next_btn: 'Next'
   }
 };
 
@@ -186,7 +186,6 @@ function useStickyState(key, defaultValue) {
     }
     return defaultValue;
   });
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
         try {
@@ -194,7 +193,6 @@ function useStickyState(key, defaultValue) {
         } catch (e) { console.warn('LocalStorage Write Error'); }
     }
   }, [key, value]);
-
   return [value, setValue];
 }
 
@@ -203,10 +201,8 @@ const getFirstDayOfMonth = (year, month) => {
   const day = new Date(year, month, 1).getDay();
   return day === 0 ? 6 : day - 1; 
 };
-
 const formatDateKey = (year, month, day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
-
 const getNextDayKey = (dateKey) => {
     try {
         const [y, m, d] = dateKey.split('-').map(Number);
@@ -215,7 +211,6 @@ const getNextDayKey = (dateKey) => {
         return formatDateKey(date.getFullYear(), date.getMonth(), date.getDate());
     } catch(e) { return dateKey; }
 };
-
 const getPrevDayKey = (dateKey) => {
     try {
         const [y, m, d] = dateKey.split('-').map(Number);
@@ -226,6 +221,71 @@ const getPrevDayKey = (dateKey) => {
 };
 
 // --- 3. Sub-Components ---
+
+// ** Tutorial Overlay Component **
+const TutorialOverlay = ({ step, onNext, t, isDark }) => {
+  if (step === 0) return null;
+
+  // Step Definitions
+  const stepsData = [
+    {
+      // Step 1: Welcome (Center)
+      title: t.tut_welcome_title,
+      msg: t.tut_welcome_msg,
+      highlightStyle: null 
+    },
+    {
+      // Step 2: Calendar Grid (Approximated position for the grid)
+      title: t.tut_longpress_title,
+      msg: t.tut_longpress_msg,
+      highlightStyle: 'top-[160px] left-3 right-3 bottom-[250px]' 
+    },
+    {
+      // Step 3: Categories (Approximated position for the color bar)
+      title: t.tut_cats_title,
+      msg: t.tut_cats_msg,
+      highlightStyle: 'bottom-[120px] left-3 right-3 h-[120px]'
+    }
+  ];
+
+  const currentStepData = stepsData[step - 1];
+  const isLast = step === stepsData.length;
+
+  return (
+    <div className="absolute inset-0 z-[60] flex flex-col overflow-hidden rounded-[40px]">
+      {/* Dark Backdrop */}
+      <div className="absolute inset-0 bg-black/60 transition-all duration-500"></div>
+
+      {/* Highlight Box (Cutout effect simulated with border/box-shadow or just placing on top) */}
+      {currentStepData.highlightStyle && (
+        <div className={`absolute border-2 border-yellow-400 bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] rounded-xl transition-all duration-500 animate-pulse ${currentStepData.highlightStyle}`}>
+          {/* Pointer/Hand Icon could go here */}
+        </div>
+      )}
+
+      {/* Content Card */}
+      <div className={`absolute z-[70] w-[80%] left-[10%] bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl transition-all duration-500 ${step === 1 ? 'top-1/2 -translate-y-1/2' : (step === 2 ? 'bottom-20' : 'top-32')}`}>
+        <div className="flex flex-col items-center text-center gap-3">
+            <h3 className="text-xl font-bold dark:text-white text-slate-800">{currentStepData.title}</h3>
+            <p className="text-sm dark:text-slate-300 text-slate-600 leading-relaxed mb-2">{currentStepData.msg}</p>
+            <button 
+              onClick={onNext}
+              className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-sm transition-all shadow-lg shadow-blue-500/30"
+            >
+              {isLast ? t.tut_finish_btn : t.tut_next_btn}
+            </button>
+        </div>
+        
+        {/* Step Indicators */}
+        <div className="flex justify-center gap-1.5 mt-4">
+           {stepsData.map((_, i) => (
+             <div key={i} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-500' : 'w-1.5 bg-slate-200 dark:bg-slate-600'}`}></div>
+           ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const GridOverlay = ({ gridMode, isDark }) => {
   const lineColor = isDark ? 'bg-slate-700' : 'bg-slate-200';
@@ -254,7 +314,6 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
       textareaRef.current.style.height = `${Math.min(scrollHeight, 76)}px`;
     }
   }, [value]);
-
   return (
     <textarea
       ref={textareaRef}
@@ -268,13 +327,11 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   );
 };
 
-// [UPDATED] DayCardModal: Removed Swipe Logic
+// ** MODIFIED: DayCardModal (Removed Swipe Logic) **
 const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, isDark, t }) => {
   const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
   const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
   
-  // REMOVED: Touch handlers (handleTouchStart, handleTouchEnd) to prevent accidental swipes
-
   let title = dateKey;
   try {
       const [y, m, d] = dateKey.split('-');
@@ -287,7 +344,7 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
     const cat = Array.isArray(categories) ? categories.find(c => c.id === colorId) : null;
     const style = getColorDef(cat?.id);
     const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
-
+    
     cells.push(
       <div key={i} className={`relative p-2 pt-6 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
         {cat && (
@@ -306,13 +363,13 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
       </div>
     );
   }
-
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
        <div 
          className={`w-full max-w-xs p-5 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} 
          onClick={(e) => e.stopPropagation()}
-         // REMOVED: onTouchStart/End props
+         /* Removed onTouchStart/End for Swipe */
        >
           <div className="flex justify-between items-center mb-4 px-1">
              <div className="flex items-center gap-2">
@@ -324,64 +381,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
           </div>
           <div className={`grid gap-2 h-64 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{cells}</div>
        </div>
-    </div>
-  );
-};
-
-// [NEW] UserGuideModal: First time user tutorial
-const UserGuideModal = ({ onClose, t, isDark }) => {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}>
-      <div className={`w-[85%] max-w-xs p-6 rounded-[32px] shadow-2xl transform transition-all scale-100 border relative overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/80'}`} onClick={(e) => e.stopPropagation()}>
-        
-        {/* Decorative Background Blob */}
-        <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 ${isDark ? 'bg-blue-500' : 'bg-blue-300'}`}></div>
-
-        <h2 className={`text-xl font-bold mb-6 text-center ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t.guideTitle}</h2>
-        
-        <div className="space-y-6">
-          {/* Step 1: Long Press */}
-          <div className="flex gap-4">
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800 text-blue-400' : 'bg-blue-50 text-blue-500'}`}>
-              <Hand size={20} />
-            </div>
-            <div>
-              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t.guideStep1Title}</h3>
-              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.guideStep1Desc}</p>
-            </div>
-          </div>
-
-          {/* Step 2: Icons */}
-          <div className="flex gap-4">
-             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800 text-purple-400' : 'bg-purple-50 text-purple-500'}`}>
-              <Settings size={20} />
-            </div>
-            <div>
-              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t.guideStep2Title}</h3>
-              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.guideStep2Desc}</p>
-            </div>
-          </div>
-
-          {/* Step 3: Stats */}
-          <div className="flex gap-4">
-             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800 text-green-400' : 'bg-green-50 text-green-500'}`}>
-              <BarChart2 size={20} />
-            </div>
-            <div>
-              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t.guideStep3Title}</h3>
-              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.guideStep3Desc}</p>
-            </div>
-          </div>
-        </div>
-
-        <button 
-          onClick={onClose}
-          className={`w-full mt-8 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isDark ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' : 'bg-slate-800 hover:bg-slate-700 text-white shadow-slate-200'}`}
-        >
-          {t.gotIt}
-        </button>
-
-      </div>
     </div>
   );
 };
@@ -406,11 +405,11 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
   );
 };
 
-const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue }) => {
+const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue, onRestartTutorial }) => {
   const fileInputRef = useRef(null);
   const [mode, setMode] = useState('menu'); 
   const handleFileChange = (e) => { const file = e.target.files[0]; if (file) onImport(file); };
-
+  
   const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
   const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
   const buttonClass = isDark ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-600';
@@ -442,6 +441,7 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
       </div>
     )
   }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} onClick={(e) => e.stopPropagation()}>
@@ -456,15 +456,24 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
             <span className="text-sm font-medium flex-1 text-left">{t.switchLang}</span>
             <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>{t.langName}</span>
           </button>
+          
           <button onClick={onExport} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue && lastBackupDate ? (isDark ? 'ring-1 ring-red-400/50 bg-red-900/20 text-red-300' : 'ring-1 ring-red-400 bg-red-50 text-red-600') : buttonClass}`}>
             <div className={`p-2 rounded-xl group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Download size={18} className={isBackupOverdue && lastBackupDate ? (isDark ? 'text-red-400' : 'text-red-500') : ''} /></div>
             <span className={`text-sm font-medium ${isBackupOverdue && lastBackupDate ? 'font-bold' : ''}`}>{isBackupOverdue && lastBackupDate ? t.backupOverdue : t.export}</span>
           </button>
+
           <button onClick={() => fileInputRef.current.click()} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
              <div className={`p-2 rounded-xl group-hover:text-green-500 dark:group-hover:text-green-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Upload size={18} /></div>
             <span className="text-sm font-medium">{t.import}</span>
             <input type="file" accept=".json" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
           </button>
+
+           {/* Manual Trigger for Tutorial */}
+           <button onClick={() => { onClose(); onRestartTutorial(); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
+            <div className={`p-2 rounded-xl group-hover:text-yellow-500 dark:group-hover:text-yellow-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Info size={18} /></div>
+            <span className="text-sm font-medium flex-1 text-left">Tutorial</span>
+          </button>
+
           <div className={`h-px my-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
           <button onClick={() => setMode('confirm_reset')} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${dangerClass}`}>
              <div className={`p-2 rounded-xl group-hover:text-red-600 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-red-400' : 'bg-white/80 text-red-400'}`}><RotateCcw size={18} /></div>
@@ -495,7 +504,6 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 // --- 4. Main Application ---
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  // SAFE STORAGE: Changing key to 'v80' to ensure fresh, safe data
   const [appTitle, setAppTitle] = useStickyState('v80_title', 'My Life Log');
   const [gridMode, setGridMode] = useStickyState('v80_gridMode', 4);
   const [categories, setCategories] = useStickyState('v80_categories', INITIAL_CATEGORIES);
@@ -507,8 +515,9 @@ export default function NewCalendarApp() {
   const [darkMode, setDarkMode] = useStickyState('v80_darkMode', false);
   const [lastBackupDate, setLastBackupDate] = useStickyState('v80_lastBackupDate', null);
   
-  // [NEW] Guide State
-  const [hasSeenGuide, setHasSeenGuide] = useStickyState('v80_guide_seen_v2', false);
+  // Tutorial States
+  const [hasSeenTutorial, setHasSeenTutorial] = useStickyState('v80_hasSeenTutorial', false);
+  const [tutorialStep, setTutorialStep] = useState(0); 
 
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -521,7 +530,29 @@ export default function NewCalendarApp() {
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
 
-  // --- SWIPE LOGIC (Main Calendar Only) ---
+  // Trigger Tutorial on first load
+  useEffect(() => {
+    if (!hasSeenTutorial) {
+        // Short delay to ensure rendering
+        const timer = setTimeout(() => setTutorialStep(1), 500);
+        return () => clearTimeout(timer);
+    }
+  }, [hasSeenTutorial]);
+
+  const handleTutorialNext = () => {
+    if (tutorialStep < 3) { // 3 steps total
+        setTutorialStep(prev => prev + 1);
+    } else {
+        setTutorialStep(0);
+        setHasSeenTutorial(true);
+    }
+  };
+
+  const handleRestartTutorial = () => {
+      setTutorialStep(1);
+  };
+
+  // --- SWIPE LOGIC (Main Calendar) ---
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const onTouchStartSwipe = (e) => { touchStartX.current = e.targetTouches[0].clientX; touchEndX.current = null; };
@@ -558,7 +589,8 @@ export default function NewCalendarApp() {
         const radius = 20; const gap = 45; const startX = 45; const startY = 45;
         dotColors.forEach((color, i) => { const row = Math.floor(i / 3); const col = i % 3; const x = startX + col * gap; const y = startY + row * gap; ctx.beginPath(); ctx.arc(x, y, radius, 0, 2 * Math.PI, false); ctx.fillStyle = color; ctx.fill(); });
         const iconUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('link'); link.type = 'image/png'; link.rel = 'icon'; link.href = iconUrl; document.head.appendChild(link);
+        const link = document.createElement('link'); link.type = 'image/png'; link.rel = 'icon';
+        link.href = iconUrl; document.head.appendChild(link);
         const appleLink = document.createElement('link'); appleLink.rel = 'apple-touch-icon'; appleLink.href = iconUrl; document.head.appendChild(appleLink);
     };
     const timer = setTimeout(injectIcon, 1000);
@@ -587,13 +619,13 @@ export default function NewCalendarApp() {
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const handleJumpToToday = (e) => { e.stopPropagation(); setCurrentDate(new Date()); };
+  
   const handleBackgroundClick = () => setSelectedColor(null);
   const toggleLanguage = () => setLangIndex((prev) => (prev + 1) % 3);
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   const handleCellClick = (dateKey, subIndex) => {
     if (selectedColor === null) return;
-    // Safety check for records object
     const currentRecs = records || {};
     const currentRecord = currentRecs[dateKey] || {};
     const currentColor = currentRecord[subIndex];
@@ -605,17 +637,21 @@ export default function NewCalendarApp() {
         if (currentColor === selectedColor) delete newRecord[subIndex]; 
         else newRecord[subIndex] = selectedColor;
     }
-    
     setRecords(prev => ({ ...prev, [dateKey]: newRecord }));
   };
 
   const updateCategoryLabel = (id, newLabel) => { setCategories(prev => prev.map(c => c.id === id ? { ...c, defaultLabel: newLabel } : c)); };
   const saveCategoryLabel = (id) => { updateCategoryLabel(id, tempLabel); setEditingCategoryId(null); };
 
-  const handleUpdateNote = (idx, text) => { const newNotes = [...footerNotes]; newNotes[idx] = { ...newNotes[idx], text }; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
-  const handleAddNote = () => { const newNotes = [...footerNotes, { id: Date.now().toString(), text: '' }]; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
-  const handleDeleteNote = (id) => { const newNotes = footerNotes.filter(n => n.id !== id); setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
+  const handleUpdateNote = (idx, text) => { const newNotes = [...footerNotes]; newNotes[idx] = { ...newNotes[idx], text };
+  setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
   
+  const handleAddNote = () => { const newNotes = [...footerNotes, { id: Date.now().toString(), text: '' }];
+  setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
+  
+  const handleDeleteNote = (id) => { const newNotes = footerNotes.filter(n => n.id !== id);
+  setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
+
   const handleSaveDayNote = (dateKey, idx, text) => {
       setDayNotes(prev => ({ ...prev, [dateKey]: { ...(prev[dateKey] || {}), [idx]: text } }));
   };
@@ -663,7 +699,6 @@ export default function NewCalendarApp() {
 
   const handleItemSwap = (targetId, listType) => {
     if (!reorderMode || reorderMode !== listType) return;
-
     if (swapSourceId === null) { setSwapSourceId(targetId); } 
     else if (swapSourceId === targetId) { setSwapSourceId(null); } 
     else {
@@ -676,7 +711,8 @@ export default function NewCalendarApp() {
          const newNotes = [...footerNotes];
          const srcIdx = newNotes.findIndex(n => n.id === swapSourceId);
          const tgtIdx = newNotes.findIndex(n => n.id === targetId);
-         if (srcIdx !== -1 && tgtIdx !== -1) { [newNotes[srcIdx], newNotes[tgtIdx]] = [newNotes[tgtIdx], newNotes[srcIdx]]; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); }
+         if (srcIdx !== -1 && tgtIdx !== -1) { [newNotes[srcIdx], newNotes[tgtIdx]] = [newNotes[tgtIdx], newNotes[srcIdx]];
+         setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); }
       }
       setSwapSourceId(null);
     }
@@ -778,11 +814,8 @@ export default function NewCalendarApp() {
       >
         
         {/* Modals */}
-        {/* [NEW] Show guide if not seen */}
-        {!hasSeenGuide && <UserGuideModal onClose={() => setHasSeenGuide(true)} t={t} isDark={darkMode} />}
-
         {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
-        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} />}
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} onRestartTutorial={handleRestartTutorial} />}
         {zoomedDateKey && (
             <DayCardModal 
                 dateKey={zoomedDateKey} 
@@ -798,6 +831,9 @@ export default function NewCalendarApp() {
                 t={t} 
             />
         )}
+        
+        {/* Tutorial Overlay */}
+        <TutorialOverlay step={tutorialStep} onNext={handleTutorialNext} t={t} isDark={darkMode} />
 
         {/* Header */}
         <div className="pt-8 pb-2 px-5 flex justify-between items-start">
@@ -814,7 +850,7 @@ export default function NewCalendarApp() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-              <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>{gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}</button>
+               <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>{gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}</button>
               <button onClick={toggleDarkMode} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
             </div>
             <div className="flex items-center gap-2">
@@ -823,7 +859,7 @@ export default function NewCalendarApp() {
             </div>
           </div>
         </div>
-
+        
         {/* Content */}
         <div className="flex-1 px-2 pb-6 outline-none overflow-visible" onClick={() => setSelectedColor(null)}>
           {view === 'calendar' ? (
@@ -843,24 +879,21 @@ export default function NewCalendarApp() {
                         <div className="grid grid-cols-7 gap-1 flex-1">
                           {week.map((cell, dayIndex) => {
                             if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />;
-                            
                             const isCurrent = cell.type === 'current';
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
                             const cellNotes = dayNotes?.[cell.dateKey];
                             const hasNote = isCurrent && cellNotes && Object.values(cellNotes).some(t => t && t.trim().length > 0);
-
+                            
                             const handlePressStart = () => isCurrent && startLongPress(cell.dateKey);
                             const handlePressEnd = () => cancelLongPress();
-
+                            
                             const subCells = [];
                             const cellRecord = (records && records[cell.dateKey]) ? records[cell.dateKey] : {};
-
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
                                const activeCatState = safeCategories.find(c => c.id === colorId);
                                const style = getColorDef(activeCatState?.id);
                                const finalColor = activeCatState ? (darkMode ? style.dark : style.light) : 'bg-transparent';
-                               
                                subCells.push(
                                  <div 
                                     key={i} 
@@ -894,7 +927,7 @@ export default function NewCalendarApp() {
                                  <div className={`flex-1 grid w-full h-full gap-0 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
                                  <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-20">
                                    <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${textColor}`}>{cell.day}</span>
-                                 </div>
+                                  </div>
                                  {hasNote && (
                                      <div className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-2 h-0.5 rounded-full z-20 ${dashColor}`}></div>
                                  )}
@@ -909,7 +942,7 @@ export default function NewCalendarApp() {
                     ))}
                   </div>
               </div>
-
+              
               {/* Spacer */}
               <div className="h-6 w-full" /> 
               
@@ -958,7 +991,7 @@ export default function NewCalendarApp() {
                     )})}
                  </div>
               </div>
-
+              
               {/* Footer Notes */}
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
@@ -986,7 +1019,6 @@ export default function NewCalendarApp() {
                     const diff = current - prev;
                     const maxCount = (stats && stats.maxCount) ? stats.maxCount : 1;
                     const barWidth = maxCount > 0 ? (current / maxCount) * 100 : 0;
-                    
                     const rangeInfo = (stats && stats.range && stats.range[cat.id]) ? stats.range[cat.id] : { hasData: false, minVal: 0, maxVal: 0 };
                     const style = getColorDef(cat.id);
                     
@@ -1004,7 +1036,7 @@ export default function NewCalendarApp() {
                     return (
                       <div key={cat.id} className={`flex-1 w-full p-3 rounded-2xl border ${darkMode ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-white/60'} shadow-sm flex items-center justify-between gap-4`}>
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
-                            <div className="flex items-center gap-1.5 mb-1"><div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div><span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span></div>
+                             <div className="flex items-center gap-1.5 mb-1"><div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div><span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span></div>
                             <span className={`text-4xl font-black leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
                             <span className={`text-[9px] font-medium mt-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsMonthCount}</span>
                          </div>
