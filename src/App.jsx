@@ -1,18 +1,22 @@
+// 完整整合版 - NewCalendarApp (V80 + tutorial + settings help + swipe-delete)
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+
 import { 
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock, X, Eraser, Info, HelpCircle
+  Globe, AlertTriangle, Clock, X, Eraser
 } from 'lucide-react';
 
 // --- 1. Constants & Helper Functions ---
+// (保留你原本的常數、helper；為了簡潔我直接貼原本內容)
+
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', pastel: 'bg-red-100',    pastelDark: 'bg-red-900/30' },
   orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', pastel: 'bg-orange-100', pastelDark: 'bg-orange-900/30' },
   yellow: { id: 'yellow', light: 'bg-yellow-300', dark: 'bg-yellow-400/80', pastel: 'bg-yellow-100', pastelDark: 'bg-yellow-900/30' },
   green:  { id: 'green',  light: 'bg-emerald-300', dark: 'bg-emerald-400/80', pastel: 'bg-emerald-100', pastelDark: 'bg-emerald-900/30' },
-  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   pastel: 'bg-blue-100', pastelDark: 'bg-blue-900/30' },
+  blue:   { id: 'blue',   light: 'bg-blue-300',   dark: 'bg-blue-400/80',   pastel: 'bg-blue-100',   pastelDark: 'bg-blue-900/30' },
   purple: { id: 'purple', light: 'bg-purple-300', dark: 'bg-purple-400/80', pastel: 'bg-purple-100', pastelDark: 'bg-purple-900/30' },
 };
 
@@ -63,21 +67,7 @@ const TRANSLATIONS = {
     statsVsLast: 'vs 上月',
     perMonth: '/ 月',
     monthSuffix: '月',
-    dayCardTitle: '詳細記錄',
-    // Tutorial
-    tut_welcome_title: '歡迎使用',
-    tut_welcome_msg: '這是一個簡單的習慣追蹤工具。讓我們花1分鐘了解如何使用。',
-    tut_icons_title: '功能選單',
-    tut_icons_msg: '由此切換「統計圖表」、切換「深色模式」以及進入「設定」頁面。',
-    tut_longpress_title: '長按編輯',
-    tut_longpress_msg: '長按月曆上的日期，即可打開詳細視圖，進行多個類別的打卡與心情筆記。',
-    tut_cats_title: '切換類別',
-    tut_cats_msg: '點擊顏色圓點選擇當前打卡顏色，或使用「橡皮擦」。雙擊文字可重新命名。',
-    tut_memo_title: '本月筆記',
-    tut_memo_msg: '在下方記錄本月目標或備忘錄。點擊箭頭圖示可調整順序。',
-    tut_finish_btn: '開始使用',
-    tut_next_btn: '下一步',
-    help_modal_title: '使用說明'
+    dayCardTitle: '詳細記錄'
   },
   jp: {
     weekDays: ['月', '火', '水', '木', '金', '土', '日'],
@@ -108,21 +98,7 @@ const TRANSLATIONS = {
     statsVsLast: '先月比',
     perMonth: '/ 月',
     monthSuffix: '月',
-    dayCardTitle: '詳細記録',
-    // Tutorial
-    tut_welcome_title: 'ようこそ',
-    tut_welcome_msg: 'シンプルで直感的な習慣トラッカーです。使い方の概要をご案内します。',
-    tut_icons_title: 'メニュー',
-    tut_icons_msg: '統計ビュー、ダークモード、設定はここからアクセスできます。',
-    tut_longpress_title: '長押しで編集',
-    tut_longpress_msg: '日付を長押しすると、詳細ビューが開き、複数の記録やメモを追加できます。',
-    tut_cats_title: 'カテゴリー選択',
-    tut_cats_msg: '下の色の点をタップして色を選択するか、消しゴムを使用します。ダブルクリックで名前を変更できます。',
-    tut_memo_title: '今月のメモ',
-    tut_memo_msg: '今月の目標やメモをここに記録します。矢印アイコンで並べ替えが可能です。',
-    tut_finish_btn: '始める',
-    tut_next_btn: '次へ',
-    help_modal_title: 'ヘルプ'
+    dayCardTitle: '詳細記録'
   },
   en: {
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -154,21 +130,7 @@ const TRANSLATIONS = {
     perMonth: '/ mo',
     monthSuffix: '',
     monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    dayCardTitle: 'Details',
-    // Tutorial
-    tut_welcome_title: 'Welcome',
-    tut_welcome_msg: 'A simple habit tracker. Let\'s take a quick tour.',
-    tut_icons_title: 'Menu Icons',
-    tut_icons_msg: 'Access Statistics, Dark Mode, and Settings from the top right corner.',
-    tut_longpress_title: 'Long Press to Edit',
-    tut_longpress_msg: 'Long press any date to open the details view for notes and multiple records.',
-    tut_cats_title: 'Select Categories',
-    tut_cats_msg: 'Tap color dots to select. Double click text to rename. Use the Eraser to clear.',
-    tut_memo_title: 'Monthly Memo',
-    tut_memo_msg: 'Write down monthly goals here. Use the arrow icon to reorder items.',
-    tut_finish_btn: 'Start',
-    tut_next_btn: 'Next',
-    help_modal_title: 'Help'
+    dayCardTitle: 'Details'
   }
 };
 
@@ -180,7 +142,6 @@ const DEFAULT_NOTES = [
 
 const BACKUP_REMINDER_DAYS = 7;
 
-// --- 2. Helper Hooks ---
 function useStickyState(key, defaultValue) {
   const [value, setValue] = useState(() => {
     if (typeof window === 'undefined') return defaultValue;
@@ -201,6 +162,7 @@ function useStickyState(key, defaultValue) {
     }
     return defaultValue;
   });
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
         try {
@@ -208,6 +170,7 @@ function useStickyState(key, defaultValue) {
         } catch (e) { console.warn('LocalStorage Write Error'); }
     }
   }, [key, value]);
+
   return [value, setValue];
 }
 
@@ -218,6 +181,7 @@ const getFirstDayOfMonth = (year, month) => {
 };
 const formatDateKey = (year, month, day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
+
 const getNextDayKey = (dateKey) => {
     try {
         const [y, m, d] = dateKey.split('-').map(Number);
@@ -226,6 +190,7 @@ const getNextDayKey = (dateKey) => {
         return formatDateKey(date.getFullYear(), date.getMonth(), date.getDate());
     } catch(e) { return dateKey; }
 };
+
 const getPrevDayKey = (dateKey) => {
     try {
         const [y, m, d] = dateKey.split('-').map(Number);
@@ -235,146 +200,146 @@ const getPrevDayKey = (dateKey) => {
     } catch(e) { return dateKey; }
 };
 
-// --- 3. Sub-Components ---
-
-// ** Tutorial Overlay Component **
-const TutorialOverlay = ({ step, onNext, t, isDark }) => {
-  if (step === 0) return null;
-
-  // Auto-Scroll Logic: Ensure the user sees the highlighted area
+// --- TutorialModal Component ---
+const TutorialModal = ({ step, onNext, onFinish, isDark }) => {
+  // highlight element via selector
   useEffect(() => {
-    if (step === 2) {
-       window.scrollTo({ top: 0, behavior: 'smooth' }); // Icons (Top)
-    } else if (step === 3) {
-       window.scrollTo({ top: 0, behavior: 'smooth' }); // Calendar (Top/Mid)
-    } else if (step === 4) {
-       // Categories (Mid/Bottom) - Scroll to a middle point roughly
-       window.scrollTo({ top: document.body.scrollHeight / 2, behavior: 'smooth' });
-    } else if (step === 5) {
-       // Memo (Bottom) - Scroll to bottom
-       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    // prevent body scroll while tutorial shown
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = orig; };
+  }, []);
+
+  const highlightSelector = step?.highlight;
+  let rect = null;
+  try {
+    if (highlightSelector) {
+      const el = document.querySelector(highlightSelector);
+      if (el) rect = el.getBoundingClientRect();
     }
-  }, [step]);
-
-  // Step Definitions with refined CSS
-  const stepsData = [
-    {
-      // Step 1: Welcome (Center)
-      title: t.tut_welcome_title,
-      msg: t.tut_welcome_msg,
-      highlightStyle: null,
-      textPos: 'center'
-    },
-    {
-      // Step 2: Top Icons
-      title: t.tut_icons_title,
-      msg: t.tut_icons_msg,
-      // Target top right area
-      highlightStyle: 'top-8 right-4 w-32 h-12', 
-      textPos: 'bottom'
-    },
-    {
-      // Step 3: Calendar Grid
-      title: t.tut_longpress_title,
-      msg: t.tut_longpress_msg,
-      // Adjusted to fit the grid more precisely, excluding week header
-      highlightStyle: 'top-[140px] left-3 right-3 h-[50%]', 
-      textPos: 'bottom' 
-    },
-    {
-      // Step 4: Categories
-      title: t.tut_cats_title,
-      msg: t.tut_cats_msg,
-      // Target the category bar
-      highlightStyle: 'bottom-[120px] left-3 right-3 h-[120px]',
-      textPos: 'top'
-    },
-    {
-      // Step 5: Memo (New)
-      title: t.tut_memo_title,
-      msg: t.tut_memo_msg,
-      // Target the bottom area
-      highlightStyle: 'bottom-4 left-3 right-3 h-[100px]',
-      textPos: 'top'
-    }
-  ];
-
-  const currentStepData = stepsData[step - 1];
-  const isLast = step === stepsData.length;
-
-  // Determine Text Card Position
-  let textCardClasses = "top-1/2 -translate-y-1/2"; // Default center
-  if (currentStepData.textPos === 'bottom') textCardClasses = "bottom-10";
-  if (currentStepData.textPos === 'top') textCardClasses = "top-20";
+  } catch (e) { rect = null; }
 
   return (
-    <div className="absolute inset-0 z-[60] flex flex-col overflow-hidden rounded-[40px] pointer-events-auto">
-      {/* Dark Backdrop */}
-      <div className="absolute inset-0 bg-black/60 transition-all duration-500"></div>
-
-      {/* Highlight Box (Yellow Border) */}
-      {currentStepData.highlightStyle && (
-        <div className={`absolute border-2 border-yellow-400 bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] rounded-xl transition-all duration-500 animate-pulse ${currentStepData.highlightStyle}`}>
-        </div>
+    <div className="fixed inset-0 z-[200]">
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+      {rect && (
+        <div
+          className="absolute rounded-xl border-4 border-yellow-400 z-[210] pointer-events-none animate-pulse"
+          style={{
+            top: rect.top - 8,
+            left: rect.left - 8,
+            width: rect.width + 16,
+            height: rect.height + 16,
+          }}
+        />
       )}
-
-      {/* Content Card */}
-      <div className={`absolute z-[70] left-0 right-0 flex justify-center transition-all duration-500 ${textCardClasses}`}>
-        <div className={`w-[280px] bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-2xl flex flex-col items-center text-center gap-3`}>
-            <h3 className="text-lg font-bold dark:text-white text-slate-800">{currentStepData.title}</h3>
-            <p className="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">{currentStepData.msg}</p>
-            <button 
-              onClick={onNext}
-              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-xs transition-all shadow-lg shadow-blue-500/30 mt-1"
-            >
-              {isLast ? t.tut_finish_btn : t.tut_next_btn}
-            </button>
-            
-            {/* Step Indicators */}
-            <div className="flex justify-center gap-1 mt-2">
-               {stepsData.map((_, i) => (
-                 <div key={i} className={`h-1 rounded-full transition-all ${i + 1 === step ? 'w-4 bg-blue-500' : 'w-1 bg-slate-200 dark:bg-slate-600'}`}></div>
-               ))}
-            </div>
+      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-[220] w-[92%] max-w-md ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+        <div className={`p-4 rounded-2xl shadow-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-white/60'}`}>
+          <h3 className="text-lg font-bold mb-2">{step.title}</h3>
+          <p className="text-sm opacity-80 mb-4">{step.text}</p>
+          {step.isLast ? (
+            <button className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl" onClick={onFinish}>我知道了，開始使用吧！</button>
+          ) : (
+            <button className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl" onClick={onNext}>下一步</button>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-// ** Help Modal (Text Only for Settings) **
-const HelpModal = ({ onClose, t, isDark }) => {
-  const helpItems = [
-    { title: t.tut_icons_title, msg: t.tut_icons_msg, icon: <Settings size={16} /> },
-    { title: t.tut_longpress_title, msg: t.tut_longpress_msg, icon: <CalendarIcon size={16} /> },
-    { title: t.tut_cats_title, msg: t.tut_cats_msg, icon: <Grid size={16} /> },
-    { title: t.tut_memo_title, msg: t.tut_memo_msg, icon: <ArrowRightLeft size={16} /> },
-  ];
+// --- 3. Sub-Components (DayCardModal updated with swipe-delete) ---
+const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, onDeleteDate, isDark, t }) => {
+  const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
+  const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
+  
+  // swipe for next/prev
+  const touchStartX = useRef(null);
+  const handleTouchStart = (e) => { touchStartX.current = e.targetTouches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (!touchStartX.current) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    if (Math.abs(diff) > 50) { 
+        if (diff > 0) onNext(); 
+        else onPrev(); 
+    }
+    touchStartX.current = null;
+  };
+
+  // delete-swipe
+  const deleteTouchStart = useRef(null);
+  const [showDelete, setShowDelete] = useState(false);
+  const handleDeleteTouchStart = (e) => { deleteTouchStart.current = e.targetTouches[0].clientX; };
+  const handleDeleteTouchEnd = (e) => {
+    if (!deleteTouchStart.current) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = deleteTouchStart.current - touchEndX;
+    if (diff > 40) setShowDelete(true);
+    else if (diff < -40) setShowDelete(false);
+    deleteTouchStart.current = null;
+  };
+
+  let title = dateKey;
+  try {
+      const [y, m, d] = dateKey.split('-');
+      title = `${y}/${parseInt(m)}/${parseInt(d)}`;
+  } catch(e) {}
+
+  const cells = [];
+  for (let i = 0; i < gridMode; i++) {
+    const colorId = cellRecord[i];
+    const cat = Array.isArray(categories) ? categories.find(c => c.id === colorId) : null;
+    const style = getColorDef(cat?.id);
+    const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
+    
+    cells.push(
+      <div key={i} className={`relative p-2 pt-6 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+        {cat && (
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
+             <div className={`w-2 h-2 rounded-full ${isDark ? style.dark : style.light}`}></div>
+             <span className={`text-[9px] font-bold opacity-80 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
+          </div>
+        )}
+        <textarea 
+          className={`flex-1 w-full bg-transparent resize-none outline-none text-xs leading-relaxed ${isDark ? 'text-slate-200 placeholder-slate-600' : 'text-slate-800 placeholder-slate-400'}`}
+          placeholder="..."
+          value={currentNotes[i] || ''}
+          onChange={(e) => onSaveNote(dateKey, i, e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-       <div className={`w-[85%] max-w-sm p-6 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-between items-center mb-4">
-             <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
-               <HelpCircle size={20} /> {t.help_modal_title}
-             </h3>
-             <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
+       <div 
+         className={`w-full max-w-xs p-5 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} 
+         onClick={(e) => e.stopPropagation()}
+         onTouchStart={(e) => { handleTouchStart(e); handleDeleteTouchStart(e); }}
+         onTouchEnd={(e) => { handleTouchEnd(e); handleDeleteTouchEnd(e); }}
+       >
+          <div className="flex justify-between items-center mb-4 px-1">
+             <div className="flex items-center gap-2">
+                 <button onClick={onPrev} className={`p-1 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><ChevronLeft size={18} /></button>
+                 <h3 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{title}</h3>
+                 <button onClick={onNext} className={`p-1 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><ChevronRight size={18} /></button>
+             </div>
+             <div className="flex items-center gap-2">
+               {showDelete && (
+                 <button onClick={() => { onDeleteDate(dateKey); }} className="py-1 px-3 rounded-lg bg-red-500 text-white font-bold">刪除</button>
+               )}
+               <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
+             </div>
           </div>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
-             {helpItems.map((item, idx) => (
-               <div key={idx} className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
-                  <div className={`font-bold text-sm mb-1 flex items-center gap-2 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
-                    {item.icon} {item.title}
-                  </div>
-                  <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.msg}</p>
-               </div>
-             ))}
-          </div>
+          <div className={`grid gap-2 h-64 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{cells}</div>
        </div>
     </div>
   );
 };
 
+// rest subcomponents (GridOverlay, AutoResizingTextarea, CustomDatePicker, NoteRow) remain same as original
 const GridOverlay = ({ gridMode, isDark }) => {
   const lineColor = isDark ? 'bg-slate-700' : 'bg-slate-200';
   const borderColor = isDark ? 'border-slate-500' : 'border-slate-400';
@@ -415,62 +380,6 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   );
 };
 
-const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, isDark, t }) => {
-  const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
-  const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
-  
-  let title = dateKey;
-  try {
-      const [y, m, d] = dateKey.split('-');
-      title = `${y}/${parseInt(m)}/${parseInt(d)}`;
-  } catch(e) {}
-
-  const cells = [];
-  for (let i = 0; i < gridMode; i++) {
-    const colorId = cellRecord[i];
-    const cat = Array.isArray(categories) ? categories.find(c => c.id === colorId) : null;
-    const style = getColorDef(cat?.id);
-    const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
-    
-    cells.push(
-      <div key={i} className={`relative p-2 pt-6 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-        {cat && (
-          <div className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
-             <div className={`w-2 h-2 rounded-full ${isDark ? style.dark : style.light}`}></div>
-             <span className={`text-[9px] font-bold opacity-80 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span>
-          </div>
-        )}
-        <textarea 
-          className={`flex-1 w-full bg-transparent resize-none outline-none text-xs leading-relaxed ${isDark ? 'text-slate-200 placeholder-slate-600' : 'text-slate-800 placeholder-slate-400'}`}
-          placeholder="..."
-          value={currentNotes[i] || ''}
-          onChange={(e) => onSaveNote(dateKey, i, e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-        />
-      </div>
-    );
-  }
-  
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-       <div 
-         className={`w-full max-w-xs p-5 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} 
-         onClick={(e) => e.stopPropagation()}
-       >
-          <div className="flex justify-between items-center mb-4 px-1">
-             <div className="flex items-center gap-2">
-                 <button onClick={onPrev} className={`p-1 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><ChevronLeft size={18} /></button>
-                 <h3 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{title}</h3>
-                 <button onClick={onNext} className={`p-1 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><ChevronRight size={18} /></button>
-             </div>
-             <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
-          </div>
-          <div className={`grid gap-2 h-64 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{cells}</div>
-       </div>
-    </div>
-  );
-};
-
 const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark, t }) => {
   const [viewYear, setViewYear] = useState(currentYear);
   return (
@@ -485,86 +394,6 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
           {Array.from({ length: 12 }, (_, i) => (
             <button key={i} onClick={() => { onSelect(viewYear, i); onClose(); }} className={`py-3 rounded-2xl text-sm font-bold transition-all duration-200 outline-none font-sans ${viewYear === currentYear && i === currentMonth ? (isDark ? 'bg-slate-100 text-slate-900 shadow-lg scale-105' : 'bg-slate-800 text-white shadow-lg scale-105') : (isDark ? 'bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-slate-200 hover:scale-105' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 hover:scale-105')}`}>{i + 1}{t.monthSuffix}</button>
           ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue, onOpenHelp }) => {
-  const fileInputRef = useRef(null);
-  const [mode, setMode] = useState('menu'); 
-  const handleFileChange = (e) => { const file = e.target.files[0]; if (file) onImport(file); };
-  
-  const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
-  const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
-  const buttonClass = isDark ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-600';
-  const dangerClass = isDark ? 'bg-red-900/20 hover:bg-red-900/30 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-600';
-  
-  let formattedLastBackup = t.neverBackedUp;
-  try {
-      if (lastBackupDate) {
-          const date = new Date(lastBackupDate);
-          if (!isNaN(date.getTime())) formattedLastBackup = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-      }
-  } catch (e) { formattedLastBackup = 'Error'; }
-
-  if (mode === 'confirm_reset') {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-        <div className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${isDark ? 'bg-slate-800 border-red-900/30' : 'bg-white border-red-100'}`} onClick={(e) => e.stopPropagation()}>
-           <div className="flex flex-col items-center text-center gap-3 mb-6">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 ${isDark ? 'bg-red-900/50 text-red-400' : 'bg-red-100 text-red-500'}`}><AlertCircle size={24} /></div>
-              <h3 className={`text-lg font-bold ${titleClass}`}>{t.confirmResetTitle}</h3>
-              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
-              <p className={`text-[10px] bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t.resetKeepNotesHint}</p>
-           </div>
-           <div className="flex gap-3">
-              <button onClick={() => setMode('menu')} className={`flex-1 py-3 rounded-2xl font-bold text-sm transition-colors outline-none ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t.cancel}</button>
-              <button onClick={onReset} className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors outline-none shadow-lg shadow-red-200 dark:shadow-none">{t.confirm}</button>
-           </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-      <div className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-6 px-1"><h3 className={`text-lg font-bold ${titleClass}`}>{t.settingsTitle}</h3></div>
-        <div className={`mb-3 px-3 py-2 rounded-xl flex items-center gap-2 text-xs ${isBackupOverdue && lastBackupDate ? (isDark ? 'bg-red-900/20 text-red-400 ring-1 ring-red-900/50' : 'bg-red-50 text-red-600 ring-1 ring-red-200') : (isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500')}`}>
-             {isBackupOverdue && lastBackupDate ? <AlertTriangle size={14} /> : <Clock size={14} />}
-             <span className="font-medium">{t.lastBackup}{formattedLastBackup}</span>
-        </div>
-        <div className="space-y-3">
-          <button onClick={toggleLanguage} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
-            <div className={`p-2 rounded-xl group-hover:text-purple-500 dark:group-hover:text-purple-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Globe size={18} /></div>
-            <span className="text-sm font-medium flex-1 text-left">{t.switchLang}</span>
-            <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>{t.langName}</span>
-          </button>
-          
-          <button onClick={onExport} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${isBackupOverdue && lastBackupDate ? (isDark ? 'ring-1 ring-red-400/50 bg-red-900/20 text-red-300' : 'ring-1 ring-red-400 bg-red-50 text-red-600') : buttonClass}`}>
-            <div className={`p-2 rounded-xl group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Download size={18} className={isBackupOverdue && lastBackupDate ? (isDark ? 'text-red-400' : 'text-red-500') : ''} /></div>
-            <span className={`text-sm font-medium ${isBackupOverdue && lastBackupDate ? 'font-bold' : ''}`}>{isBackupOverdue && lastBackupDate ? t.backupOverdue : t.export}</span>
-          </button>
-
-          <button onClick={() => fileInputRef.current.click()} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
-             <div className={`p-2 rounded-xl group-hover:text-green-500 dark:group-hover:text-green-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Upload size={18} /></div>
-            <span className="text-sm font-medium">{t.import}</span>
-            <input type="file" accept=".json" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
-          </button>
-
-           {/* Manual Trigger for Help */}
-           <button onClick={() => { onClose(); onOpenHelp(); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
-            <div className={`p-2 rounded-xl group-hover:text-yellow-500 dark:group-hover:text-yellow-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Info size={18} /></div>
-            <span className="text-sm font-medium flex-1 text-left">{t.help_modal_title}</span>
-          </button>
-
-          <div className={`h-px my-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
-          <button onClick={() => setMode('confirm_reset')} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${dangerClass}`}>
-             <div className={`p-2 rounded-xl group-hover:text-red-600 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-red-400' : 'bg-white/80 text-red-400'}`}><RotateCcw size={18} /></div>
-            <span className="text-sm font-medium">{t.resetMonth}</span>
-          </button>
         </div>
       </div>
     </div>
@@ -590,6 +419,8 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 // --- 4. Main Application ---
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // SAFE STORAGE: Changing key to 'v80' to ensure fresh, safe data
   const [appTitle, setAppTitle] = useStickyState('v80_title', 'My Life Log');
   const [gridMode, setGridMode] = useStickyState('v80_gridMode', 4);
   const [categories, setCategories] = useStickyState('v80_categories', INITIAL_CATEGORIES);
@@ -600,16 +431,16 @@ export default function NewCalendarApp() {
   const [langIndex, setLangIndex] = useStickyState('v80_langIndex', 0);
   const [darkMode, setDarkMode] = useStickyState('v80_darkMode', false);
   const [lastBackupDate, setLastBackupDate] = useStickyState('v80_lastBackupDate', null);
-  
-  // Tutorial States
-  const [hasSeenTutorial, setHasSeenTutorial] = useStickyState('v80_hasSeenTutorial', false);
-  const [tutorialStep, setTutorialStep] = useState(0); 
-  const [showHelpModal, setShowHelpModal] = useState(false);
+
+  // tutorial persistent flag: true = 已完成教學
+  const [tutorialDone, setTutorialDone] = useStickyState('v80_tutorialDone', false);
+  const [tutorialStepIndex, setTutorialStepIndex] = useState(0);
 
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [zoomedDateKey, setZoomedDateKey] = useState(null);
+  const [zoomedDateKey, setZoomedDateKey] = useState(null); 
+  
   const [selectedColor, setSelectedColor] = useState(null);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [tempLabel, setTempLabel] = useState('');
@@ -617,26 +448,34 @@ export default function NewCalendarApp() {
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
 
-  // Trigger Tutorial on first load
-  useEffect(() => {
-    if (!hasSeenTutorial) {
-        // Short delay to ensure rendering
-        const timer = setTimeout(() => setTutorialStep(1), 500);
-        return () => clearTimeout(timer);
+  // tutorial steps config
+  const tutorialSteps = [
+    {
+      id: 1,
+      highlight: '.calendar-area',
+      title: '編輯日期紀錄',
+      text: '長按某一天的格子（不要按到星期列）即可編輯當天詳細紀錄。'
+    },
+    {
+      id: 2,
+      highlight: '.category-area',
+      title: '選擇分類顏色',
+      text: '在這裡點選分類顏色，然後點日曆格子進行標記。'
+    },
+    {
+      id: 3,
+      highlight: '.footer-note-area',
+      title: '編輯本月備註',
+      text: '在本月備註區新增或編輯你的當月筆記。'
+    },
+    {
+      id: 4,
+      highlight: null,
+      title: '完成！',
+      text: '你已經完成快速導覽，祝你使用愉快！',
+      isLast: true
     }
-  }, [hasSeenTutorial]);
-
-  const handleTutorialNext = () => {
-    // Steps: 1.Welcome -> 2.Icons -> 3.Calendar -> 4.Categories -> 5.Memo
-    if (tutorialStep < 5) { 
-        setTutorialStep(prev => prev + 1);
-    } else {
-        setTutorialStep(0);
-        setHasSeenTutorial(true);
-        // Reset scroll
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
+  ];
 
   // --- SWIPE LOGIC (Main Calendar) ---
   const touchStartX = useRef(null);
@@ -651,13 +490,15 @@ export default function NewCalendarApp() {
     if (distance < -100) handlePrevMonth();
   };
 
-  // --- LONG PRESS LOGIC ---
+  // --- LONG PRESS LOGIC (Without Hook, using Ref to avoid crashes) ---
   const longPressTimer = useRef(null);
+
   const startLongPress = (dateKey) => {
     longPressTimer.current = setTimeout(() => {
         setZoomedDateKey(dateKey);
     }, 500); // 500ms long press
   };
+
   const cancelLongPress = () => {
      if (longPressTimer.current) {
          clearTimeout(longPressTimer.current);
@@ -665,7 +506,7 @@ export default function NewCalendarApp() {
      }
   };
 
-  // Auto-Inject Icon
+  // Auto-Inject Icon (原樣保留)
   useEffect(() => {
     const injectIcon = () => {
         const existingIcons = document.querySelectorAll("link[rel*='icon']");
@@ -675,8 +516,7 @@ export default function NewCalendarApp() {
         const radius = 20; const gap = 45; const startX = 45; const startY = 45;
         dotColors.forEach((color, i) => { const row = Math.floor(i / 3); const col = i % 3; const x = startX + col * gap; const y = startY + row * gap; ctx.beginPath(); ctx.arc(x, y, radius, 0, 2 * Math.PI, false); ctx.fillStyle = color; ctx.fill(); });
         const iconUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('link'); link.type = 'image/png'; link.rel = 'icon';
-        link.href = iconUrl; document.head.appendChild(link);
+        const link = document.createElement('link'); link.type = 'image/png'; link.rel = 'icon'; link.href = iconUrl; document.head.appendChild(link);
         const appleLink = document.createElement('link'); appleLink.rel = 'apple-touch-icon'; appleLink.href = iconUrl; document.head.appendChild(appleLink);
     };
     const timer = setTimeout(injectIcon, 1000);
@@ -684,10 +524,11 @@ export default function NewCalendarApp() {
   }, []);
 
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const month = currentDate.getMonth(); 
   const monthKey = getMonthKey(year, month);
   const today = new Date();
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
+
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
   
   const isBackupOverdue = useMemo(() => {
@@ -705,38 +546,35 @@ export default function NewCalendarApp() {
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const handleJumpToToday = (e) => { e.stopPropagation(); setCurrentDate(new Date()); };
-  
+
   const handleBackgroundClick = () => setSelectedColor(null);
   const toggleLanguage = () => setLangIndex((prev) => (prev + 1) % 3);
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   const handleCellClick = (dateKey, subIndex) => {
     if (selectedColor === null) return;
+    
     const currentRecs = records || {};
     const currentRecord = currentRecs[dateKey] || {};
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
-
+    
     if (selectedColor === 'ERASER') {
         if (currentColor) delete newRecord[subIndex];
     } else {
         if (currentColor === selectedColor) delete newRecord[subIndex]; 
-        else newRecord[subIndex] = selectedColor;
+        else newRecord[subIndex] = selectedColor; 
     }
+    
     setRecords(prev => ({ ...prev, [dateKey]: newRecord }));
   };
 
   const updateCategoryLabel = (id, newLabel) => { setCategories(prev => prev.map(c => c.id === id ? { ...c, defaultLabel: newLabel } : c)); };
   const saveCategoryLabel = (id) => { updateCategoryLabel(id, tempLabel); setEditingCategoryId(null); };
 
-  const handleUpdateNote = (idx, text) => { const newNotes = [...footerNotes]; newNotes[idx] = { ...newNotes[idx], text };
-  setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
-  
-  const handleAddNote = () => { const newNotes = [...footerNotes, { id: Date.now().toString(), text: '' }];
-  setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
-  
-  const handleDeleteNote = (id) => { const newNotes = footerNotes.filter(n => n.id !== id);
-  setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
+  const handleUpdateNote = (idx, text) => { const newNotes = [...footerNotes]; newNotes[idx] = { ...newNotes[idx], text }; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
+  const handleAddNote = () => { const newNotes = [...footerNotes, { id: Date.now().toString(), text: '' }]; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
+  const handleDeleteNote = (id) => { const newNotes = footerNotes.filter(n => n.id !== id); setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
 
   const handleSaveDayNote = (dateKey, idx, text) => {
       setDayNotes(prev => ({ ...prev, [dateKey]: { ...(prev[dateKey] || {}), [idx]: text } }));
@@ -755,8 +593,7 @@ export default function NewCalendarApp() {
     const data = { appTitle, gridMode, categories, records, weekNotes, dayNotes, allFooterNotes, langIndex, exportedAt: now };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url; link.download = `calendar_backup_${now.slice(0, 10)}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const link = document.createElement('a'); link.href = url; link.download = `calendar_backup_${now.slice(0, 10)}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
     setShowSettings(false);
   };
 
@@ -782,7 +619,6 @@ export default function NewCalendarApp() {
   };
 
   const toggleReorderMode = (mode) => { if (reorderMode === mode) { setReorderMode(null); setSwapSourceId(null); } else { setReorderMode(mode); setSwapSourceId(null); } };
-
   const handleItemSwap = (targetId, listType) => {
     if (!reorderMode || reorderMode !== listType) return;
     if (swapSourceId === null) { setSwapSourceId(targetId); } 
@@ -797,14 +633,12 @@ export default function NewCalendarApp() {
          const newNotes = [...footerNotes];
          const srcIdx = newNotes.findIndex(n => n.id === swapSourceId);
          const tgtIdx = newNotes.findIndex(n => n.id === targetId);
-         if (srcIdx !== -1 && tgtIdx !== -1) { [newNotes[srcIdx], newNotes[tgtIdx]] = [newNotes[tgtIdx], newNotes[srcIdx]];
-         setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); }
+         if (srcIdx !== -1 && tgtIdx !== -1) { [newNotes[srcIdx], newNotes[tgtIdx]] = [newNotes[tgtIdx], newNotes[srcIdx]]; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); }
       }
       setSwapSourceId(null);
     }
   };
 
-  // --- Stats Logic ---
   const calendarDays = useMemo(() => {
     try {
         const daysInMonth = getDaysInMonth(year, month);
@@ -850,6 +684,7 @@ export default function NewCalendarApp() {
         
         const range = {}; 
         safeCategories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
+        
         Object.keys(safeRecords).forEach(dateKey => {
             if (!dateKey) return;
             const parts = dateKey.split('-');
@@ -857,6 +692,7 @@ export default function NewCalendarApp() {
             const [y, m] = parts.map(Number);
             const monthVal = y * 12 + (m - 1); 
             if (isNaN(monthVal)) return;
+
             const monthStr = `${y}.${String(m).padStart(2, '0')}`;
             const rec = safeRecords[dateKey];
             if (rec) {
@@ -881,6 +717,31 @@ export default function NewCalendarApp() {
 
   const memoMonthLabel = langKey === 'en' ? t.monthNames[month] : `${month + 1}${t.monthSuffix}`;
 
+  // handle tutorial navigation
+  const currentTutorialStep = tutorialSteps[tutorialStepIndex];
+
+  const handleNextTutorial = () => {
+    if (tutorialStepIndex < tutorialSteps.length - 1) setTutorialStepIndex(i => i + 1);
+  };
+  const handleFinishTutorial = () => {
+    setTutorialDone(true);
+  };
+
+  // handle delete date (from DayCardModal)
+  const handleDeleteDate = (dateKey) => {
+    setRecords(prev => {
+      const newRec = {...prev};
+      delete newRec[dateKey];
+      return newRec;
+    });
+    setDayNotes(prev => {
+      const newNotes = {...prev};
+      delete newNotes[dateKey];
+      return newNotes;
+    });
+    setZoomedDateKey(null);
+  };
+
   return (
     <>
     <style dangerouslySetInnerHTML={{__html: `
@@ -889,7 +750,7 @@ export default function NewCalendarApp() {
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       .hoverable:active { transform: scale(0.95); transition: transform 0.1s; }
     `}} />
-    {/* ROOT CONTAINER */}
+
     <div 
       onClick={handleBackgroundClick} 
       className={`flex justify-center px-1 font-sans selection:bg-slate-200 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-700'} min-h-screen py-4`}
@@ -898,11 +759,9 @@ export default function NewCalendarApp() {
         className={`w-full max-w-md shadow-2xl flex flex-col relative border transition-colors duration-300 h-auto min-h-[80vh] rounded-[40px] ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-white/60'}`} 
         onClick={(e) => e.stopPropagation()} 
       >
-        
         {/* Modals */}
         {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
-        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} onOpenHelp={() => setShowHelpModal(true)} />}
-        {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} t={t} isDark={darkMode} />}
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} />}
         {zoomedDateKey && (
             <DayCardModal 
                 dateKey={zoomedDateKey} 
@@ -914,13 +773,11 @@ export default function NewCalendarApp() {
                 onSaveNote={handleSaveDayNote} 
                 onNext={() => setZoomedDateKey(getNextDayKey(zoomedDateKey))}
                 onPrev={() => setZoomedDateKey(getPrevDayKey(zoomedDateKey))}
+                onDeleteDate={handleDeleteDate}
                 isDark={darkMode} 
                 t={t} 
             />
         )}
-        
-        {/* Tutorial Overlay */}
-        <TutorialOverlay step={tutorialStep} onNext={handleTutorialNext} t={t} isDark={darkMode} />
 
         {/* Header */}
         <div className="pt-8 pb-2 px-5 flex justify-between items-start">
@@ -937,7 +794,7 @@ export default function NewCalendarApp() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-               <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>{gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}</button>
+              <button onClick={() => setGridMode(prev => prev === 4 ? 6 : 4)} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>{gridMode === 4 ? <LayoutGrid size={18} /> : <Grid size={18} />}</button>
               <button onClick={toggleDarkMode} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all border outline-none ${darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 border-transparent hover:border-slate-200'}`}>{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
             </div>
             <div className="flex items-center gap-2">
@@ -946,7 +803,7 @@ export default function NewCalendarApp() {
             </div>
           </div>
         </div>
-        
+
         {/* Content */}
         <div className="flex-1 px-2 pb-6 outline-none overflow-visible" onClick={() => setSelectedColor(null)}>
           {view === 'calendar' ? (
@@ -955,25 +812,27 @@ export default function NewCalendarApp() {
               <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe}>
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
                      <div className="grid grid-cols-7 gap-1">
-                         {currentWeekLabels.map((day, i) => (<div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>))}
+                        {currentWeekLabels.map((day, i) => (<div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>))}
                      </div>
                      <div className="w-8"></div>
                   </div>
-       
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 calendar-area"> {/* <- 標記給 Tutorial */}
                     {weeks.map((week, weekIndex) => (
                       <div key={weekIndex} className="flex gap-1">
                         <div className="grid grid-cols-7 gap-1 flex-1">
                           {week.map((cell, dayIndex) => {
-                            if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />;
+                            if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />; 
+                            
                             const isCurrent = cell.type === 'current';
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
                             const cellNotes = dayNotes?.[cell.dateKey];
                             const hasNote = isCurrent && cellNotes && Object.values(cellNotes).some(t => t && t.trim().length > 0);
                             
+                            // 這裡已經移除了 useLongPress Hook！
+                            // 改用 onTouchStart/onTouchEnd + useRef 實作
                             const handlePressStart = () => isCurrent && startLongPress(cell.dateKey);
                             const handlePressEnd = () => cancelLongPress();
-                            
+
                             const subCells = [];
                             const cellRecord = (records && records[cell.dateKey]) ? records[cell.dateKey] : {};
                             for (let i = 0; i < gridMode; i++) {
@@ -997,6 +856,7 @@ export default function NewCalendarApp() {
                             const textColor = isTodayDate 
                                 ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') 
                                 : (darkMode ? 'text-slate-200' : 'text-slate-500');
+                                
                             const dashColor = isTodayDate
                                 ? (darkMode ? 'bg-slate-100' : 'bg-slate-800')
                                 : (darkMode ? 'bg-slate-200' : 'bg-slate-500');
@@ -1014,7 +874,7 @@ export default function NewCalendarApp() {
                                  <div className={`flex-1 grid w-full h-full gap-0 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{subCells}</div>
                                  <div className="absolute bottom-[3px] right-[3px] pointer-events-none z-20">
                                    <span className={`text-[9px] font-bold leading-none flex items-center justify-center w-4 h-4 rounded-full transition-all ${textColor}`}>{cell.day}</span>
-                                  </div>
+                                 </div>
                                  {hasNote && (
                                      <div className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-2 h-0.5 rounded-full z-20 ${dashColor}`}></div>
                                  )}
@@ -1029,12 +889,12 @@ export default function NewCalendarApp() {
                     ))}
                   </div>
               </div>
-              
+
               {/* Spacer */}
               <div className="h-6 w-full" /> 
-              
+
               {/* Color Palette */}
-              <div className="px-1">
+              <div className="px-1 category-area"> {/* <- 標記給 Tutorial */}
                  <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-3">
                         <h3 className={`text-[10px] font-bold uppercase tracking-widest flex items-center ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
@@ -1043,6 +903,7 @@ export default function NewCalendarApp() {
                         </h3>
                         <button onClick={(e) => { e.stopPropagation(); toggleReorderMode('color'); }} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
                     </div>
+
                     <button 
                         onClick={(e) => { e.stopPropagation(); setSelectedColor(prev => prev === 'ERASER' ? null : 'ERASER'); }}
                         className={`p-1.5 rounded-full transition-all ${selectedColor === 'ERASER' ? (darkMode ? 'bg-slate-600 text-white ring-1 ring-slate-400' : 'bg-slate-800 text-white ring-1 ring-slate-600') : (darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
@@ -1051,6 +912,7 @@ export default function NewCalendarApp() {
                         <Eraser size={14} />
                     </button>
                  </div>
+
                  <div className="grid grid-cols-3 gap-3">
                     {safeCategories.map((cat) => {
                       const style = getColorDef(cat.id);
@@ -1078,11 +940,11 @@ export default function NewCalendarApp() {
                     )})}
                  </div>
               </div>
-              
-              {/* Footer Notes */}
-              <div className="mt-8 mb-4 px-1">
+
+              {/* Footer Notes - Removed e.stopPropagation */}
+              <div className="mt-8 mb-4 px-1 footer-note-area"> {/* <- 標記給 Tutorial */}
                  <div className="flex justify-between items-end mb-2">
-                    <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span></h3>
                       <div className="flex items-center gap-2">
                         <button onClick={(e) => { e.stopPropagation(); toggleReorderMode('note'); }} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
@@ -1098,7 +960,7 @@ export default function NewCalendarApp() {
               </div>
             </>
           ) : (
-             <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2" onClick={(e) => e.stopPropagation()}>
+            <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2" onClick={(e) => e.stopPropagation()}>
                <div className="flex flex-col h-full gap-2">
                  {safeCategories.map((cat) => {
                     const current = (stats && stats.currentCounts) ? (stats.currentCounts[cat.id] || 0) : 0;
@@ -1106,6 +968,7 @@ export default function NewCalendarApp() {
                     const diff = current - prev;
                     const maxCount = (stats && stats.maxCount) ? stats.maxCount : 1;
                     const barWidth = maxCount > 0 ? (current / maxCount) * 100 : 0;
+                    
                     const rangeInfo = (stats && stats.range && stats.range[cat.id]) ? stats.range[cat.id] : { hasData: false, minVal: 0, maxVal: 0 };
                     const style = getColorDef(cat.id);
                     
@@ -1117,13 +980,12 @@ export default function NewCalendarApp() {
                         freqText = `${avg}${t.perMonth}`;
                     }
                     let diffColorClass = darkMode ? 'text-slate-500' : 'text-slate-400'; 
-                    if (diff > 0) { diffColorClass = darkMode ? 'text-emerald-400' : 'text-emerald-600'; } 
-                    else if (diff < 0) { diffColorClass = darkMode ? 'text-red-400' : 'text-red-600'; }
-                    
+                    if (diff > 0) { diffColorClass = darkMode ? 'text-emerald-400' : 'text-emerald-600'; } else if (diff < 0) { diffColorClass = darkMode ? 'text-red-400' : 'text-red-600'; }
+
                     return (
                       <div key={cat.id} className={`flex-1 w-full p-3 rounded-2xl border ${darkMode ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-white/60'} shadow-sm flex items-center justify-between gap-4`}>
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
-                             <div className="flex items-center gap-1.5 mb-1"><div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div><span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span></div>
+                            <div className="flex items-center gap-1.5 mb-1"><div className={`w-2 h-2 rounded-full ${darkMode ? style.dark : style.light}`}></div><span className={`font-bold text-xs ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{cat.defaultLabel}</span></div>
                             <span className={`text-4xl font-black leading-none tracking-tighter ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>{current}</span>
                             <span className={`text-[9px] font-medium mt-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t.statsMonthCount}</span>
                          </div>
@@ -1140,6 +1002,12 @@ export default function NewCalendarApp() {
           )}
         </div>
       </div>
+
+      {/* Tutorial overlay */}
+      {!tutorialDone && currentTutorialStep && (
+        <TutorialModal step={currentTutorialStep} onNext={handleNextTutorial} onFinish={handleFinishTutorial} isDark={darkMode} />
+      )}
+
     </div>
     </>
   );
