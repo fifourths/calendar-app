@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock, X, Eraser
+  Globe, AlertTriangle, X, Eraser, Info, HelpCircle
 } from 'lucide-react';
 
 // --- 1. Constants & Helper Functions ---
@@ -49,7 +49,7 @@ const TRANSLATIONS = {
     import: '匯入資料',
     resetMonth: '重置本月紀錄',
     confirmResetTitle: '確定重置？',
-    confirmResetMsg: '將清除本月所有打卡紀錄。<br/>此動作無法復原。',
+    confirmResetMsg: '將清除本月所有打卡紀錄，此動作無法復原。',
     resetKeepNotesHint: '僅重置當月曆打卡記錄，當月筆記不會重置',
     cancel: '取消',
     confirm: '確認重置',
@@ -64,7 +64,11 @@ const TRANSLATIONS = {
     statsVsLast: 'vs 上月',
     perMonth: '/ 月',
     monthSuffix: '月',
-    dayCardTitle: '詳細記錄'
+    dayCardTitle: '詳細記錄',
+    helpTitle: '操作說明',
+    helpContent: '• 長按日期：編輯詳細紀錄\n• 點選顏色：再點日期進行標記\n• 雙擊文字：編輯分類或標題\n• 左右滑動：切換月份\n• 備份資料：建議每週匯出一次',
+    btnYes: '是的，刪除',
+    btnNo: '取消'
   },
   jp: {
     weekDays: ['月', '火', '水', '木', '金', '土', '日'],
@@ -76,11 +80,11 @@ const TRANSLATIONS = {
     neverBackedUp: '未バックアップ',
     backupOverdue: 'バックアップ推奨',
     switchLang: '言語切り替え',
-    export: 'バックアップを保存',
+    export: 'バックアップ保存',
     import: 'データを復元',
     resetMonth: '今月の記録をリセット',
     confirmResetTitle: 'リセットしますか？',
-    confirmResetMsg: '今月の全ての記録が消去されます。<br/>この操作は取り消せません。',
+    confirmResetMsg: '今月の全ての記録が消去されます。この操作は取り消せません。',
     resetKeepNotesHint: 'カレンダーの記録のみリセットされます。メモは保持されます。',
     cancel: 'キャンセル',
     confirm: 'リセット',
@@ -95,7 +99,11 @@ const TRANSLATIONS = {
     statsVsLast: '先月比',
     perMonth: '/ 月',
     monthSuffix: '月',
-    dayCardTitle: '詳細記録'
+    dayCardTitle: '詳細記録',
+    helpTitle: '操作説明',
+    helpContent: '• 日付長押し：詳細を編集\n• 色を選択：日付をタップしてマーク\n• ダブルクリック：テキスト編集\n• 左右スワイプ：月を切り替え\n• バックアップ：週1回推奨',
+    btnYes: 'はい、削除します',
+    btnNo: 'キャンセル'
   },
   en: {
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -111,7 +119,7 @@ const TRANSLATIONS = {
     import: 'Import Data',
     resetMonth: 'Reset Month',
     confirmResetTitle: 'Reset Month?',
-    confirmResetMsg: 'This will clear all records for this month.<br/>Cannot be undone.',
+    confirmResetMsg: 'This will clear all records for this month. Cannot be undone.',
     resetKeepNotesHint: 'Only calendar records are reset. Notes remain.',
     cancel: 'Cancel',
     confirm: 'Reset',
@@ -127,7 +135,11 @@ const TRANSLATIONS = {
     perMonth: '/ mo',
     monthSuffix: '',
     monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    dayCardTitle: 'Details'
+    dayCardTitle: 'Details',
+    helpTitle: 'Instructions',
+    helpContent: '• Long Press Date: Edit details\n• Pick Color: Tap date to mark\n• Double Click: Edit text\n• Swipe: Switch months\n• Backup: Recommended weekly',
+    btnYes: 'Yes, Reset',
+    btnNo: 'Cancel'
   }
 };
 
@@ -197,87 +209,13 @@ const getPrevDayKey = (dateKey) => {
     } catch(e) { return dateKey; }
 };
 
-// --- 2. TutorialModal (Updated V81) ---
-const TutorialModal = ({ step, onNext, onFinish, isDark }) => {
-  const [rect, setRect] = useState(null);
+// --- Sub-Components ---
 
-  useEffect(() => {
-    if (!step.highlight) {
-      setRect(null);
-      return;
-    }
-
-    const el = document.querySelector(step.highlight);
-    if (!el) return;
-
-    const updateRect = () => {
-      const r = el.getBoundingClientRect();
-      setRect(r);
-    };
-    
-    // Initial calc
-    updateRect();
-    
-    // Scroll into view logic
-    el.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-    
-    // Optional: Update on resize
-    window.addEventListener('resize', updateRect);
-    return () => window.removeEventListener('resize', updateRect);
-  }, [step]);
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] pointer-events-auto">
-      {/* Highlight Box */}
-      {rect && (
-        <div
-          className="absolute border-4 border-yellow-400 rounded-xl shadow-lg animate-pulse transition-all duration-300"
-          style={{
-            top: rect.top - 8,
-            left: rect.left - 8,
-            width: rect.width + 16,
-            height: rect.height + 16,
-          }}
-        />
-      )}
-
-      {/* Text Content Area */}
-      <div 
-        className={`absolute bottom-10 left-1/2 -translate-x-1/2 p-5 rounded-2xl w-[85%] max-w-sm shadow-xl transition-colors duration-300 ${isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-900'}`}
-      >
-        <h2 className="text-lg font-bold mb-2">{step.title}</h2>
-        <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{step.text}</p>
-
-        {step.isLast ? (
-          <button
-            className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-transform"
-            onClick={onFinish}
-          >
-            我知道了，開始使用吧！
-          </button>
-        ) : (
-          <button
-            className={`w-full py-3 font-bold rounded-xl active:scale-95 transition-transform ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-900 text-white hover:bg-slate-700'}`}
-            onClick={onNext}
-          >
-            下一步
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// --- 3. Sub-Components ---
-
-const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, onDeleteDate, isDark, t }) => {
+const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, isDark, t }) => {
   const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
   const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
 
-  // Swipe logic
+  // Swipe logic (Next/Prev only, NO Delete)
   const touchStartX = useRef(null);
   const handleTouchStart = (e) => { touchStartX.current = e.targetTouches[0].clientX; };
   const handleTouchEnd = (e) => {
@@ -289,19 +227,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
         else onPrev(); 
     }
     touchStartX.current = null;
-  };
-
-  // Delete Swipe Logic
-  const deleteTouchStart = useRef(null);
-  const [showDelete, setShowDelete] = useState(false);
-  const handleDeleteTouchStart = (e) => { deleteTouchStart.current = e.targetTouches[0].clientX; };
-  const handleDeleteTouchEnd = (e) => {
-    if (!deleteTouchStart.current) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = deleteTouchStart.current - touchEndX;
-    if (diff > 40) setShowDelete(true);
-    else if (diff < -40) setShowDelete(false);
-    deleteTouchStart.current = null;
   };
 
   let title = dateKey;
@@ -341,8 +266,8 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
        <div 
          className={`w-full max-w-xs p-5 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} 
          onClick={(e) => e.stopPropagation()}
-         onTouchStart={(e) => { handleTouchStart(e); handleDeleteTouchStart(e); }}
-         onTouchEnd={(e) => { handleTouchEnd(e); handleDeleteTouchEnd(e); }}
+         onTouchStart={handleTouchStart}
+         onTouchEnd={handleTouchEnd}
        >
           <div className="flex justify-between items-center mb-4 px-1">
              <div className="flex items-center gap-2">
@@ -350,12 +275,7 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
                  <h3 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{title}</h3>
                  <button onClick={onNext} className={`p-1 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><ChevronRight size={18} /></button>
              </div>
-             <div className="flex items-center gap-2">
-               {showDelete && (
-                 <button onClick={() => { onDeleteDate(dateKey); }} className="py-1 px-3 rounded-lg bg-red-500 text-white font-bold text-xs animate-in fade-in zoom-in">刪除</button>
-               )}
-               <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
-             </div>
+             <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
           </div>
           <div className={`grid gap-2 h-64 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{cells}</div>
        </div>
@@ -440,15 +360,41 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
 };
 
 const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue }) => {
+   const [showConfirmReset, setShowConfirmReset] = useState(false);
+
+   if (showConfirmReset) {
+       // Custom Confirm UI matching the App style
+       return (
+        <div className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 ${isDark ? 'bg-slate-900/60' : 'bg-slate-900/20'}`} onClick={() => setShowConfirmReset(false)}>
+            <div className={`rounded-[32px] p-6 shadow-2xl w-80 transform transition-all scale-100 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/50'}`} onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col items-center text-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-500 mb-1">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <h3 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t.confirmResetTitle}</h3>
+                    <p className={`text-sm opacity-80 mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`} dangerouslySetInnerHTML={{__html: t.confirmResetMsg}}></p>
+                    
+                    <button onClick={onReset} className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors">
+                        {t.btnYes}
+                    </button>
+                    <button onClick={() => setShowConfirmReset(false)} className={`w-full py-3 font-bold rounded-xl transition-colors ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                        {t.btnNo}
+                    </button>
+                </div>
+            </div>
+        </div>
+       );
+   }
+
    return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 ${isDark ? 'bg-slate-900/60' : 'bg-slate-900/20'}`} onClick={onClose}>
-      <div className={`rounded-[32px] p-6 shadow-2xl w-80 transform transition-all scale-100 border relative overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/50'}`} onClick={(e) => e.stopPropagation()}>
-         <div className="flex items-center gap-2 mb-6">
+      <div className={`rounded-[32px] p-6 shadow-2xl w-80 transform transition-all scale-100 border relative overflow-hidden flex flex-col max-h-[85vh] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/50'}`} onClick={(e) => e.stopPropagation()}>
+         <div className="flex items-center gap-2 mb-6 flex-shrink-0">
             <Settings className={isDark ? "text-slate-400" : "text-slate-500"} size={20} />
             <h2 className={`text-xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t.settingsTitle}</h2>
          </div>
          
-         <div className="space-y-3">
+         <div className="space-y-3 overflow-y-auto no-scrollbar pb-2">
              {/* Backup Section */}
              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
                 <div className="flex justify-between items-center mb-2">
@@ -461,8 +407,9 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
                    </p>
                 </div>
                 <div className="flex gap-2">
-                   <button onClick={onExport} className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-colors ${isDark ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}><Download size={14} />{t.export}</button>
-                   <label className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-bold cursor-pointer transition-colors ${isDark ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
+                   {/* FIXED: Added whitespace-nowrap and smaller font for JP button fix */}
+                   <button onClick={onExport} className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold whitespace-nowrap transition-colors ${isDark ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}><Download size={14} />{t.export}</button>
+                   <label className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold whitespace-nowrap cursor-pointer transition-colors ${isDark ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}>
                       <Upload size={14} />{t.import}
                       <input type="file" accept=".json" onChange={(e) => { if(e.target.files?.[0]) onImport(e.target.files[0]); }} className="hidden" />
                    </label>
@@ -478,11 +425,23 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
                  <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600 border border-slate-200'}`}>{t.langName}</span>
              </button>
 
+             {/* Help Section (Added in V82) */}
+             <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                    <HelpCircle size={14} className={isDark ? "text-slate-400" : "text-slate-500"} />
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.helpTitle}</span>
+                </div>
+                <p className={`text-[10px] whitespace-pre-line leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {t.helpContent}
+                </p>
+             </div>
+
              {/* Reset */}
              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-red-900/10 border-red-900/30' : 'bg-red-50 border-red-100'}`}>
                 <h3 className={`text-xs font-bold mb-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>{t.resetMonth}</h3>
                 <p className={`text-[10px] mb-3 opacity-70 ${isDark ? 'text-red-300' : 'text-red-500'}`}>{t.resetKeepNotesHint}</p>
-                <button onClick={() => { if(window.confirm('Are you sure?')) onReset(); }} className={`w-full py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-colors ${isDark ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-white text-red-500 border border-red-200 hover:bg-red-50'}`}><RotateCcw size={14} />{t.confirm}</button>
+                {/* Changed to trigger custom confirmation */}
+                <button onClick={() => setShowConfirmReset(true)} className={`w-full py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-colors ${isDark ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-white text-red-500 border border-red-200 hover:bg-red-50'}`}><RotateCcw size={14} />{t.confirm}</button>
              </div>
          </div>
       </div>
@@ -495,8 +454,7 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // SAFE STORAGE: Changing key to 'v81' to ensure fresh structure if needed, or keep 'v80' if compatible.
-  // Using v80 keys as requested for update compatibility.
+  // Using 'v80' keys as requested for data persistence
   const [appTitle, setAppTitle] = useStickyState('v80_title', 'My Life Log');
   const [gridMode, setGridMode] = useStickyState('v80_gridMode', 4);
   const [categories, setCategories] = useStickyState('v80_categories', INITIAL_CATEGORIES);
@@ -508,10 +466,6 @@ export default function NewCalendarApp() {
   const [darkMode, setDarkMode] = useStickyState('v80_darkMode', false);
   const [lastBackupDate, setLastBackupDate] = useStickyState('v80_lastBackupDate', null);
   
-  // tutorial persistent flag
-  const [tutorialDone, setTutorialDone] = useStickyState('v80_tutorialDone', false);
-  const [tutorialStepIndex, setTutorialStepIndex] = useState(0);
-
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -523,35 +477,6 @@ export default function NewCalendarApp() {
   
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
-
-  // --- UPDATED TUTORIAL STEPS (V81) ---
-  const tutorialSteps = [
-    {
-      id: 1,
-      highlight: ".footer-note-area",
-      title: "編輯本月備註",
-      text: "在本月備註區新增或編輯當月的筆記。",
-    },
-    {
-      id: 2,
-      highlight: ".category-area",
-      title: "選擇分類顏色",
-      text: "在這裡選擇分類顏色，然後點日曆格子進行標記。",
-    },
-    {
-      id: 3,
-      highlight: ".calendar-grid",
-      title: "編輯日期紀錄",
-      text: "長按某一天的格子即可編輯當天詳細記錄。",
-    },
-    {
-      id: 4,
-      highlight: null,
-      title: "完成啦！",
-      text: "你已經學會如何使用這個月曆啦！",
-      isLast: true,
-    },
-  ];
 
   // --- SWIPE LOGIC (Main Calendar) ---
   const touchStartX = useRef(null);
@@ -789,16 +714,7 @@ export default function NewCalendarApp() {
 
   const memoMonthLabel = langKey === 'en' ? t.monthNames[month] : `${month + 1}${t.monthSuffix}`;
 
-  // handle tutorial navigation
-  const currentTutorialStep = tutorialSteps[tutorialStepIndex];
-  const handleNextTutorial = () => {
-    if (tutorialStepIndex < tutorialSteps.length - 1) setTutorialStepIndex(i => i + 1);
-  };
-  const handleFinishTutorial = () => {
-    setTutorialDone(true);
-  };
-
-  // handle delete date (from DayCardModal)
+  // handle delete date (logic kept for data integrity, UI button removed)
   const handleDeleteDate = (dateKey) => {
     setRecords(prev => {
       const newRec = {...prev};
@@ -843,7 +759,6 @@ export default function NewCalendarApp() {
                 onSaveNote={handleSaveDayNote} 
                 onNext={() => setZoomedDateKey(getNextDayKey(zoomedDateKey))}
                 onPrev={() => setZoomedDateKey(getPrevDayKey(zoomedDateKey))}
-                onDeleteDate={handleDeleteDate}
                 isDark={darkMode} 
                 t={t} 
             />
@@ -886,8 +801,7 @@ export default function NewCalendarApp() {
                      </div>
                      <div className="w-8"></div>
                   </div>
-                  {/* Added calendar-grid class for tutorial targeting */}
-                  <div className="flex flex-col gap-1 calendar-area calendar-grid">
+                  <div className="flex flex-col gap-1">
                     {weeks.map((week, weekIndex) => (
                       <div key={weekIndex} className="flex gap-1">
                         <div className="grid grid-cols-7 gap-1 flex-1">
@@ -958,7 +872,7 @@ export default function NewCalendarApp() {
               <div className="h-6 w-full" /> 
 
               {/* Color Palette */}
-              <div className="px-1 category-area">
+              <div className="px-1">
                  <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-3">
                         <h3 className={`text-[10px] font-bold uppercase tracking-widest flex items-center ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
@@ -1004,7 +918,7 @@ export default function NewCalendarApp() {
               </div>
 
               {/* Footer Notes */}
-              <div className="mt-8 mb-4 px-1 footer-note-area">
+              <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
                     <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span></h3>
@@ -1064,11 +978,6 @@ export default function NewCalendarApp() {
           )}
         </div>
       </div>
-      
-      {/* Tutorial overlay */}
-      {!tutorialDone && currentTutorialStep && (
-        <TutorialModal step={currentTutorialStep} onNext={handleNextTutorial} onFinish={handleFinishTutorial} isDark={darkMode} />
-      )}
     </div>
     </>
   );
