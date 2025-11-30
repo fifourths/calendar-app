@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock, X, Eraser, Info
+  Globe, AlertTriangle, Clock, X, Eraser, Info, HelpCircle
 } from 'lucide-react';
 
 // --- 1. Constants & Helper Functions ---
@@ -65,14 +65,19 @@ const TRANSLATIONS = {
     monthSuffix: '月',
     dayCardTitle: '詳細記錄',
     // Tutorial
-    tut_welcome_title: '歡迎使用生活紀錄',
-    tut_welcome_msg: '這是一個簡單直觀的習慣追蹤與日記工具。讓我們花一點時間了解如何使用它。',
+    tut_welcome_title: '歡迎使用',
+    tut_welcome_msg: '這是一個簡單的習慣追蹤工具。讓我們花1分鐘了解如何使用。',
+    tut_icons_title: '功能選單',
+    tut_icons_msg: '由此切換「統計圖表」、切換「深色模式」以及進入「設定」頁面。',
     tut_longpress_title: '長按編輯',
-    tut_longpress_msg: '在月曆區域長按任意日期卡片，即可打開詳細視圖，記錄多個類別的打卡與心情筆記。',
+    tut_longpress_msg: '長按月曆上的日期，即可打開詳細視圖，進行多個類別的打卡與心情筆記。',
     tut_cats_title: '切換類別',
-    tut_cats_msg: '點擊下方的顏色圓點來選擇當前打卡顏色，或使用「橡皮擦」清除紀錄。雙擊文字可重新命名類別。',
-    tut_finish_btn: '我知道了，開始使用吧！',
-    tut_next_btn: '下一步'
+    tut_cats_msg: '點擊顏色圓點選擇當前打卡顏色，或使用「橡皮擦」。雙擊文字可重新命名。',
+    tut_memo_title: '本月筆記',
+    tut_memo_msg: '在下方記錄本月目標或備忘錄。點擊箭頭圖示可調整順序。',
+    tut_finish_btn: '開始使用',
+    tut_next_btn: '下一步',
+    help_modal_title: '使用說明'
   },
   jp: {
     weekDays: ['月', '火', '水', '木', '金', '土', '日'],
@@ -104,15 +109,20 @@ const TRANSLATIONS = {
     perMonth: '/ 月',
     monthSuffix: '月',
     dayCardTitle: '詳細記録',
-     // Tutorial
+    // Tutorial
     tut_welcome_title: 'ようこそ',
     tut_welcome_msg: 'シンプルで直感的な習慣トラッカーです。使い方の概要をご案内します。',
+    tut_icons_title: 'メニュー',
+    tut_icons_msg: '統計ビュー、ダークモード、設定はここからアクセスできます。',
     tut_longpress_title: '長押しで編集',
-    tut_longpress_msg: 'カレンダーの日付を長押しすると、詳細ビューが開き、複数の記録やメモを追加できます。',
+    tut_longpress_msg: '日付を長押しすると、詳細ビューが開き、複数の記録やメモを追加できます。',
     tut_cats_title: 'カテゴリー選択',
     tut_cats_msg: '下の色の点をタップして色を選択するか、消しゴムを使用します。ダブルクリックで名前を変更できます。',
+    tut_memo_title: '今月のメモ',
+    tut_memo_msg: '今月の目標やメモをここに記録します。矢印アイコンで並べ替えが可能です。',
     tut_finish_btn: '始める',
-    tut_next_btn: '次へ'
+    tut_next_btn: '次へ',
+    help_modal_title: 'ヘルプ'
   },
   en: {
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -145,15 +155,20 @@ const TRANSLATIONS = {
     monthSuffix: '',
     monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     dayCardTitle: 'Details',
-     // Tutorial
+    // Tutorial
     tut_welcome_title: 'Welcome',
-    tut_welcome_msg: 'A simple habit tracker and journal. Let\'s take a quick tour.',
+    tut_welcome_msg: 'A simple habit tracker. Let\'s take a quick tour.',
+    tut_icons_title: 'Menu Icons',
+    tut_icons_msg: 'Access Statistics, Dark Mode, and Settings from the top right corner.',
     tut_longpress_title: 'Long Press to Edit',
-    tut_longpress_msg: 'Long press any date card in the calendar to open the detailed view for notes and multiple records.',
+    tut_longpress_msg: 'Long press any date to open the details view for notes and multiple records.',
     tut_cats_title: 'Select Categories',
-    tut_cats_msg: 'Tap the color dots below to select a category, or use the Eraser. Double click text to rename.',
-    tut_finish_btn: 'Got it, Let\'s Start!',
-    tut_next_btn: 'Next'
+    tut_cats_msg: 'Tap color dots to select. Double click text to rename. Use the Eraser to clear.',
+    tut_memo_title: 'Monthly Memo',
+    tut_memo_msg: 'Write down monthly goals here. Use the arrow icon to reorder items.',
+    tut_finish_btn: 'Start',
+    tut_next_btn: 'Next',
+    help_modal_title: 'Help'
   }
 };
 
@@ -226,63 +241,136 @@ const getPrevDayKey = (dateKey) => {
 const TutorialOverlay = ({ step, onNext, t, isDark }) => {
   if (step === 0) return null;
 
-  // Step Definitions
+  // Auto-Scroll Logic: Ensure the user sees the highlighted area
+  useEffect(() => {
+    if (step === 2) {
+       window.scrollTo({ top: 0, behavior: 'smooth' }); // Icons (Top)
+    } else if (step === 3) {
+       window.scrollTo({ top: 0, behavior: 'smooth' }); // Calendar (Top/Mid)
+    } else if (step === 4) {
+       // Categories (Mid/Bottom) - Scroll to a middle point roughly
+       window.scrollTo({ top: document.body.scrollHeight / 2, behavior: 'smooth' });
+    } else if (step === 5) {
+       // Memo (Bottom) - Scroll to bottom
+       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+  }, [step]);
+
+  // Step Definitions with refined CSS
   const stepsData = [
     {
       // Step 1: Welcome (Center)
       title: t.tut_welcome_title,
       msg: t.tut_welcome_msg,
-      highlightStyle: null 
+      highlightStyle: null,
+      textPos: 'center'
     },
     {
-      // Step 2: Calendar Grid (Approximated position for the grid)
+      // Step 2: Top Icons
+      title: t.tut_icons_title,
+      msg: t.tut_icons_msg,
+      // Target top right area
+      highlightStyle: 'top-8 right-4 w-32 h-12', 
+      textPos: 'bottom'
+    },
+    {
+      // Step 3: Calendar Grid
       title: t.tut_longpress_title,
       msg: t.tut_longpress_msg,
-      highlightStyle: 'top-[160px] left-3 right-3 bottom-[250px]' 
+      // Adjusted to fit the grid more precisely, excluding week header
+      highlightStyle: 'top-[140px] left-3 right-3 h-[50%]', 
+      textPos: 'bottom' 
     },
     {
-      // Step 3: Categories (Approximated position for the color bar)
+      // Step 4: Categories
       title: t.tut_cats_title,
       msg: t.tut_cats_msg,
-      highlightStyle: 'bottom-[120px] left-3 right-3 h-[120px]'
+      // Target the category bar
+      highlightStyle: 'bottom-[120px] left-3 right-3 h-[120px]',
+      textPos: 'top'
+    },
+    {
+      // Step 5: Memo (New)
+      title: t.tut_memo_title,
+      msg: t.tut_memo_msg,
+      // Target the bottom area
+      highlightStyle: 'bottom-4 left-3 right-3 h-[100px]',
+      textPos: 'top'
     }
   ];
 
   const currentStepData = stepsData[step - 1];
   const isLast = step === stepsData.length;
 
+  // Determine Text Card Position
+  let textCardClasses = "top-1/2 -translate-y-1/2"; // Default center
+  if (currentStepData.textPos === 'bottom') textCardClasses = "bottom-10";
+  if (currentStepData.textPos === 'top') textCardClasses = "top-20";
+
   return (
-    <div className="absolute inset-0 z-[60] flex flex-col overflow-hidden rounded-[40px]">
+    <div className="absolute inset-0 z-[60] flex flex-col overflow-hidden rounded-[40px] pointer-events-auto">
       {/* Dark Backdrop */}
       <div className="absolute inset-0 bg-black/60 transition-all duration-500"></div>
 
-      {/* Highlight Box (Cutout effect simulated with border/box-shadow or just placing on top) */}
+      {/* Highlight Box (Yellow Border) */}
       {currentStepData.highlightStyle && (
         <div className={`absolute border-2 border-yellow-400 bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] rounded-xl transition-all duration-500 animate-pulse ${currentStepData.highlightStyle}`}>
-          {/* Pointer/Hand Icon could go here */}
         </div>
       )}
 
       {/* Content Card */}
-      <div className={`absolute z-[70] w-[80%] left-[10%] bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl transition-all duration-500 ${step === 1 ? 'top-1/2 -translate-y-1/2' : (step === 2 ? 'bottom-20' : 'top-32')}`}>
-        <div className="flex flex-col items-center text-center gap-3">
-            <h3 className="text-xl font-bold dark:text-white text-slate-800">{currentStepData.title}</h3>
-            <p className="text-sm dark:text-slate-300 text-slate-600 leading-relaxed mb-2">{currentStepData.msg}</p>
+      <div className={`absolute z-[70] left-0 right-0 flex justify-center transition-all duration-500 ${textCardClasses}`}>
+        <div className={`w-[280px] bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-2xl flex flex-col items-center text-center gap-3`}>
+            <h3 className="text-lg font-bold dark:text-white text-slate-800">{currentStepData.title}</h3>
+            <p className="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">{currentStepData.msg}</p>
             <button 
               onClick={onNext}
-              className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-sm transition-all shadow-lg shadow-blue-500/30"
+              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-xs transition-all shadow-lg shadow-blue-500/30 mt-1"
             >
               {isLast ? t.tut_finish_btn : t.tut_next_btn}
             </button>
-        </div>
-        
-        {/* Step Indicators */}
-        <div className="flex justify-center gap-1.5 mt-4">
-           {stepsData.map((_, i) => (
-             <div key={i} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-500' : 'w-1.5 bg-slate-200 dark:bg-slate-600'}`}></div>
-           ))}
+            
+            {/* Step Indicators */}
+            <div className="flex justify-center gap-1 mt-2">
+               {stepsData.map((_, i) => (
+                 <div key={i} className={`h-1 rounded-full transition-all ${i + 1 === step ? 'w-4 bg-blue-500' : 'w-1 bg-slate-200 dark:bg-slate-600'}`}></div>
+               ))}
+            </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ** Help Modal (Text Only for Settings) **
+const HelpModal = ({ onClose, t, isDark }) => {
+  const helpItems = [
+    { title: t.tut_icons_title, msg: t.tut_icons_msg, icon: <Settings size={16} /> },
+    { title: t.tut_longpress_title, msg: t.tut_longpress_msg, icon: <CalendarIcon size={16} /> },
+    { title: t.tut_cats_title, msg: t.tut_cats_msg, icon: <Grid size={16} /> },
+    { title: t.tut_memo_title, msg: t.tut_memo_msg, icon: <ArrowRightLeft size={16} /> },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+       <div className={`w-[85%] max-w-sm p-6 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-4">
+             <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+               <HelpCircle size={20} /> {t.help_modal_title}
+             </h3>
+             <button onClick={onClose} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}><X size={20} /></button>
+          </div>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+             {helpItems.map((item, idx) => (
+               <div key={idx} className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                  <div className={`font-bold text-sm mb-1 flex items-center gap-2 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                    {item.icon} {item.title}
+                  </div>
+                  <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.msg}</p>
+               </div>
+             ))}
+          </div>
+       </div>
     </div>
   );
 };
@@ -327,7 +415,6 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   );
 };
 
-// ** MODIFIED: DayCardModal (Removed Swipe Logic) **
 const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, isDark, t }) => {
   const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
   const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
@@ -369,7 +456,6 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
        <div 
          className={`w-full max-w-xs p-5 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} 
          onClick={(e) => e.stopPropagation()}
-         /* Removed onTouchStart/End for Swipe */
        >
           <div className="flex justify-between items-center mb-4 px-1">
              <div className="flex items-center gap-2">
@@ -405,7 +491,7 @@ const CustomDatePicker = ({ currentYear, currentMonth, onClose, onSelect, isDark
   );
 };
 
-const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue, onRestartTutorial }) => {
+const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t, isDark, lastBackupDate, isBackupOverdue, onOpenHelp }) => {
   const fileInputRef = useRef(null);
   const [mode, setMode] = useState('menu'); 
   const handleFileChange = (e) => { const file = e.target.files[0]; if (file) onImport(file); };
@@ -468,10 +554,10 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
             <input type="file" accept=".json" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
           </button>
 
-           {/* Manual Trigger for Tutorial */}
-           <button onClick={() => { onClose(); onRestartTutorial(); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
+           {/* Manual Trigger for Help */}
+           <button onClick={() => { onClose(); onOpenHelp(); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors outline-none group ${buttonClass}`}>
             <div className={`p-2 rounded-xl group-hover:text-yellow-500 dark:group-hover:text-yellow-300 transition-colors shadow-sm ${isDark ? 'bg-slate-600 text-slate-200' : 'bg-white text-slate-400'}`}><Info size={18} /></div>
-            <span className="text-sm font-medium flex-1 text-left">Tutorial</span>
+            <span className="text-sm font-medium flex-1 text-left">{t.help_modal_title}</span>
           </button>
 
           <div className={`h-px my-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}></div>
@@ -518,6 +604,7 @@ export default function NewCalendarApp() {
   // Tutorial States
   const [hasSeenTutorial, setHasSeenTutorial] = useStickyState('v80_hasSeenTutorial', false);
   const [tutorialStep, setTutorialStep] = useState(0); 
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -540,16 +627,15 @@ export default function NewCalendarApp() {
   }, [hasSeenTutorial]);
 
   const handleTutorialNext = () => {
-    if (tutorialStep < 3) { // 3 steps total
+    // Steps: 1.Welcome -> 2.Icons -> 3.Calendar -> 4.Categories -> 5.Memo
+    if (tutorialStep < 5) { 
         setTutorialStep(prev => prev + 1);
     } else {
         setTutorialStep(0);
         setHasSeenTutorial(true);
+        // Reset scroll
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
-
-  const handleRestartTutorial = () => {
-      setTutorialStep(1);
   };
 
   // --- SWIPE LOGIC (Main Calendar) ---
@@ -815,7 +901,8 @@ export default function NewCalendarApp() {
         
         {/* Modals */}
         {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
-        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} onRestartTutorial={handleRestartTutorial} />}
+        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} onOpenHelp={() => setShowHelpModal(true)} />}
+        {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} t={t} isDark={darkMode} />}
         {zoomedDateKey && (
             <DayCardModal 
                 dateKey={zoomedDateKey} 
