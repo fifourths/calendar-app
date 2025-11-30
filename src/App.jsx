@@ -3,11 +3,10 @@ import {
   ChevronLeft, ChevronRight, Grid, LayoutGrid, BarChart2, 
   Plus, Trash2, Settings, Download, Upload, RotateCcw, 
   AlertCircle, ArrowRightLeft, Calendar as CalendarIcon, Moon, Sun, 
-  Globe, AlertTriangle, Clock, X, Eraser
+  Globe, AlertTriangle, Clock, X, Eraser, Hand, Info
 } from 'lucide-react';
 
 // --- 1. Constants & Helper Functions ---
-
 const COLOR_DEFINITIONS = {
   red:    { id: 'red',    light: 'bg-red-300',    dark: 'bg-red-400/80', pastel: 'bg-red-100',    pastelDark: 'bg-red-900/30' },
   orange: { id: 'orange', light: 'bg-orange-300', dark: 'bg-orange-400/80', pastel: 'bg-orange-100', pastelDark: 'bg-orange-900/30' },
@@ -64,7 +63,16 @@ const TRANSLATIONS = {
     statsVsLast: 'vs 上月',
     perMonth: '/ 月',
     monthSuffix: '月',
-    dayCardTitle: '詳細記錄'
+    dayCardTitle: '詳細記錄',
+    // Guide Translations
+    guideTitle: '歡迎使用',
+    guideStep1Title: '長按編輯',
+    guideStep1Desc: '長按任何日期方格，即可開啟詳細筆記與編輯視窗。',
+    guideStep2Title: '功能選單',
+    guideStep2Desc: '右上角圖示包含：顯示切換、深色模式與詳細統計圖表。',
+    guideStep3Title: '統計解讀',
+    guideStep3Desc: '統計長條圖的長度代表「相對頻率」，次數越多的項目長度越長。',
+    gotIt: '開始使用'
   },
   jp: {
     weekDays: ['月', '火', '水', '木', '金', '土', '日'],
@@ -95,7 +103,16 @@ const TRANSLATIONS = {
     statsVsLast: '先月比',
     perMonth: '/ 月',
     monthSuffix: '月',
-    dayCardTitle: '詳細記録'
+    dayCardTitle: '詳細記録',
+    // Guide Translations
+    guideTitle: 'ようこそ',
+    guideStep1Title: '長押しで編集',
+    guideStep1Desc: '日付を長押しすると、詳細なメモや編集画面が開きます。',
+    guideStep2Title: 'メニュー',
+    guideStep2Desc: '右上のアイコンで、表示切替、ダークモード、統計グラフにアクセスできます。',
+    guideStep3Title: '統計の見方',
+    guideStep3Desc: 'グラフの長さは「相対的な頻度」を表します。回数が多いほどバーが長くなります。',
+    gotIt: '始める'
   },
   en: {
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -127,7 +144,16 @@ const TRANSLATIONS = {
     perMonth: '/ mo',
     monthSuffix: '',
     monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    dayCardTitle: 'Details'
+    dayCardTitle: 'Details',
+    // Guide Translations
+    guideTitle: 'Welcome',
+    guideStep1Title: 'Long Press to Edit',
+    guideStep1Desc: 'Long press any date cell to open details and add notes.',
+    guideStep2Title: 'Top Menu',
+    guideStep2Desc: 'Access settings, dark mode, and statistics from the top right icons.',
+    guideStep3Title: 'Reading Stats',
+    guideStep3Desc: 'Bar length represents "relative frequency". More frequent habits have longer bars.',
+    gotIt: 'Get Started'
   }
 };
 
@@ -140,7 +166,6 @@ const DEFAULT_NOTES = [
 const BACKUP_REMINDER_DAYS = 7;
 
 // --- 2. Helper Hooks ---
-
 function useStickyState(key, defaultValue) {
   const [value, setValue] = useState(() => {
     if (typeof window === 'undefined') return defaultValue;
@@ -178,6 +203,7 @@ const getFirstDayOfMonth = (year, month) => {
   const day = new Date(year, month, 1).getDay();
   return day === 0 ? 6 : day - 1; 
 };
+
 const formatDateKey = (year, month, day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 const getMonthKey = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
@@ -228,6 +254,7 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
       textareaRef.current.style.height = `${Math.min(scrollHeight, 76)}px`;
     }
   }, [value]);
+
   return (
     <textarea
       ref={textareaRef}
@@ -241,22 +268,12 @@ const AutoResizingTextarea = ({ value, onChange, placeholder, isDark }) => {
   );
 };
 
+// [UPDATED] DayCardModal: Removed Swipe Logic
 const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClose, onSaveNote, onNext, onPrev, isDark, t }) => {
   const cellRecord = (records && records[dateKey]) ? records[dateKey] : {};
   const currentNotes = (dayNotes && dayNotes[dateKey]) ? dayNotes[dateKey] : {};
   
-  const touchStartX = useRef(null);
-  const handleTouchStart = (e) => { touchStartX.current = e.targetTouches[0].clientX; };
-  const handleTouchEnd = (e) => {
-    if (!touchStartX.current) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-    if (Math.abs(diff) > 50) { 
-        if (diff > 0) onNext(); 
-        else onPrev(); 
-    }
-    touchStartX.current = null;
-  };
+  // REMOVED: Touch handlers (handleTouchStart, handleTouchEnd) to prevent accidental swipes
 
   let title = dateKey;
   try {
@@ -270,7 +287,7 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
     const cat = Array.isArray(categories) ? categories.find(c => c.id === colorId) : null;
     const style = getColorDef(cat?.id);
     const bgClass = cat ? (isDark ? style.pastelDark : style.pastel) : (isDark ? 'bg-slate-800' : 'bg-slate-50');
-    
+
     cells.push(
       <div key={i} className={`relative p-2 pt-6 rounded-xl border transition-colors flex flex-col ${bgClass} ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
         {cat && (
@@ -295,8 +312,7 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
        <div 
          className={`w-full max-w-xs p-5 rounded-[32px] shadow-2xl transform transition-all scale-100 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/60'}`} 
          onClick={(e) => e.stopPropagation()}
-         onTouchStart={handleTouchStart}
-         onTouchEnd={handleTouchEnd}
+         // REMOVED: onTouchStart/End props
        >
           <div className="flex justify-between items-center mb-4 px-1">
              <div className="flex items-center gap-2">
@@ -308,6 +324,64 @@ const DayCardModal = ({ dateKey, gridMode, records, categories, dayNotes, onClos
           </div>
           <div className={`grid gap-2 h-64 ${gridMode === 4 ? 'grid-cols-2 grid-rows-2' : 'grid-cols-3 grid-rows-2'}`}>{cells}</div>
        </div>
+    </div>
+  );
+};
+
+// [NEW] UserGuideModal: First time user tutorial
+const UserGuideModal = ({ onClose, t, isDark }) => {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}>
+      <div className={`w-[85%] max-w-xs p-6 rounded-[32px] shadow-2xl transform transition-all scale-100 border relative overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white/80'}`} onClick={(e) => e.stopPropagation()}>
+        
+        {/* Decorative Background Blob */}
+        <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 ${isDark ? 'bg-blue-500' : 'bg-blue-300'}`}></div>
+
+        <h2 className={`text-xl font-bold mb-6 text-center ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{t.guideTitle}</h2>
+        
+        <div className="space-y-6">
+          {/* Step 1: Long Press */}
+          <div className="flex gap-4">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800 text-blue-400' : 'bg-blue-50 text-blue-500'}`}>
+              <Hand size={20} />
+            </div>
+            <div>
+              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t.guideStep1Title}</h3>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.guideStep1Desc}</p>
+            </div>
+          </div>
+
+          {/* Step 2: Icons */}
+          <div className="flex gap-4">
+             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800 text-purple-400' : 'bg-purple-50 text-purple-500'}`}>
+              <Settings size={20} />
+            </div>
+            <div>
+              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t.guideStep2Title}</h3>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.guideStep2Desc}</p>
+            </div>
+          </div>
+
+          {/* Step 3: Stats */}
+          <div className="flex gap-4">
+             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800 text-green-400' : 'bg-green-50 text-green-500'}`}>
+              <BarChart2 size={20} />
+            </div>
+            <div>
+              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t.guideStep3Title}</h3>
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.guideStep3Desc}</p>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          onClick={onClose}
+          className={`w-full mt-8 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isDark ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' : 'bg-slate-800 hover:bg-slate-700 text-white shadow-slate-200'}`}
+        >
+          {t.gotIt}
+        </button>
+
+      </div>
     </div>
   );
 };
@@ -336,7 +410,7 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
   const fileInputRef = useRef(null);
   const [mode, setMode] = useState('menu'); 
   const handleFileChange = (e) => { const file = e.target.files[0]; if (file) onImport(file); };
-  
+
   const containerClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-white/60';
   const titleClass = isDark ? 'text-slate-100' : 'text-slate-800';
   const buttonClass = isDark ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-600';
@@ -368,7 +442,6 @@ const SettingsModal = ({ onClose, onReset, onExport, onImport, toggleLanguage, t
       </div>
     )
   }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
       <div className={`rounded-[32px] p-6 shadow-2xl w-72 transform transition-all scale-100 border ${containerClass}`} onClick={(e) => e.stopPropagation()}>
@@ -419,12 +492,9 @@ const NoteRow = ({ note, onChange, onDelete, isReordering, isSelected, onReorder
   );
 };
 
-
 // --- 4. Main Application ---
-
 export default function NewCalendarApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  
   // SAFE STORAGE: Changing key to 'v80' to ensure fresh, safe data
   const [appTitle, setAppTitle] = useStickyState('v80_title', 'My Life Log');
   const [gridMode, setGridMode] = useStickyState('v80_gridMode', 4);
@@ -437,11 +507,13 @@ export default function NewCalendarApp() {
   const [darkMode, setDarkMode] = useStickyState('v80_darkMode', false);
   const [lastBackupDate, setLastBackupDate] = useStickyState('v80_lastBackupDate', null);
   
+  // [NEW] Guide State
+  const [hasSeenGuide, setHasSeenGuide] = useStickyState('v80_guide_seen_v2', false);
+
   const [view, setView] = useState('calendar'); 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [zoomedDateKey, setZoomedDateKey] = useState(null); 
-  
+  const [zoomedDateKey, setZoomedDateKey] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [tempLabel, setTempLabel] = useState('');
@@ -449,7 +521,7 @@ export default function NewCalendarApp() {
   const [reorderMode, setReorderMode] = useState(null);
   const [swapSourceId, setSwapSourceId] = useState(null);
 
-  // --- SWIPE LOGIC (Main Calendar) ---
+  // --- SWIPE LOGIC (Main Calendar Only) ---
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const onTouchStartSwipe = (e) => { touchStartX.current = e.targetTouches[0].clientX; touchEndX.current = null; };
@@ -462,15 +534,13 @@ export default function NewCalendarApp() {
     if (distance < -100) handlePrevMonth();
   };
 
-  // --- LONG PRESS LOGIC (Without Hook, using Ref to avoid crashes) ---
+  // --- LONG PRESS LOGIC ---
   const longPressTimer = useRef(null);
-
   const startLongPress = (dateKey) => {
     longPressTimer.current = setTimeout(() => {
         setZoomedDateKey(dateKey);
     }, 500); // 500ms long press
   };
-
   const cancelLongPress = () => {
      if (longPressTimer.current) {
          clearTimeout(longPressTimer.current);
@@ -496,11 +566,10 @@ export default function NewCalendarApp() {
   }, []);
 
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth(); 
+  const month = currentDate.getMonth();
   const monthKey = getMonthKey(year, month);
   const today = new Date();
   const isToday = (d, m, y) => d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
-
   const footerNotes = allFooterNotes[monthKey] || DEFAULT_NOTES;
   
   const isBackupOverdue = useMemo(() => {
@@ -518,25 +587,23 @@ export default function NewCalendarApp() {
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const handleJumpToToday = (e) => { e.stopPropagation(); setCurrentDate(new Date()); };
-
   const handleBackgroundClick = () => setSelectedColor(null);
   const toggleLanguage = () => setLangIndex((prev) => (prev + 1) % 3);
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   const handleCellClick = (dateKey, subIndex) => {
     if (selectedColor === null) return;
-    
     // Safety check for records object
     const currentRecs = records || {};
     const currentRecord = currentRecs[dateKey] || {};
     const currentColor = currentRecord[subIndex];
     const newRecord = { ...currentRecord };
-    
+
     if (selectedColor === 'ERASER') {
         if (currentColor) delete newRecord[subIndex];
     } else {
         if (currentColor === selectedColor) delete newRecord[subIndex]; 
-        else newRecord[subIndex] = selectedColor; 
+        else newRecord[subIndex] = selectedColor;
     }
     
     setRecords(prev => ({ ...prev, [dateKey]: newRecord }));
@@ -548,7 +615,7 @@ export default function NewCalendarApp() {
   const handleUpdateNote = (idx, text) => { const newNotes = [...footerNotes]; newNotes[idx] = { ...newNotes[idx], text }; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
   const handleAddNote = () => { const newNotes = [...footerNotes, { id: Date.now().toString(), text: '' }]; setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
   const handleDeleteNote = (id) => { const newNotes = footerNotes.filter(n => n.id !== id); setAllFooterNotes(prev => ({ ...prev, [monthKey]: newNotes })); };
-
+  
   const handleSaveDayNote = (dateKey, idx, text) => {
       setDayNotes(prev => ({ ...prev, [dateKey]: { ...(prev[dateKey] || {}), [idx]: text } }));
   };
@@ -566,7 +633,8 @@ export default function NewCalendarApp() {
     const data = { appTitle, gridMode, categories, records, weekNotes, dayNotes, allFooterNotes, langIndex, exportedAt: now };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a'); link.href = url; link.download = `calendar_backup_${now.slice(0, 10)}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const link = document.createElement('a');
+    link.href = url; link.download = `calendar_backup_${now.slice(0, 10)}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
     setShowSettings(false);
   };
 
@@ -592,8 +660,10 @@ export default function NewCalendarApp() {
   };
 
   const toggleReorderMode = (mode) => { if (reorderMode === mode) { setReorderMode(null); setSwapSourceId(null); } else { setReorderMode(mode); setSwapSourceId(null); } };
+
   const handleItemSwap = (targetId, listType) => {
     if (!reorderMode || reorderMode !== listType) return;
+
     if (swapSourceId === null) { setSwapSourceId(targetId); } 
     else if (swapSourceId === targetId) { setSwapSourceId(null); } 
     else {
@@ -612,7 +682,7 @@ export default function NewCalendarApp() {
     }
   };
 
-  // --- Stats Logic (Safeguarded against null/crash) ---
+  // --- Stats Logic ---
   const calendarDays = useMemo(() => {
     try {
         const daysInMonth = getDaysInMonth(year, month);
@@ -630,14 +700,12 @@ export default function NewCalendarApp() {
   const weeks = [];
   for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
 
-  // --- CRASH FIX: Ensure categories are always valid before using in stats/render ---
   const safeCategories = useMemo(() => {
     if (!Array.isArray(categories)) return INITIAL_CATEGORIES;
     const valid = categories.filter(c => c && typeof c.id === 'string');
     return valid.length > 0 ? valid : INITIAL_CATEGORIES;
   }, [categories]);
 
-  // --- CRASH FIX: Robust Stats Calculation with Global Try-Catch ---
   const stats = useMemo(() => {
     try {
         const safeRecords = (records && typeof records === 'object') ? records : {};
@@ -660,16 +728,13 @@ export default function NewCalendarApp() {
         
         const range = {}; 
         safeCategories.forEach(c => range[c.id] = { min: null, max: null, minVal: Infinity, maxVal: -Infinity, hasData: false });
-        
         Object.keys(safeRecords).forEach(dateKey => {
             if (!dateKey) return;
             const parts = dateKey.split('-');
             if (parts.length < 2) return;
             const [y, m] = parts.map(Number);
             const monthVal = y * 12 + (m - 1); 
-            // Handle NaN
             if (isNaN(monthVal)) return;
-
             const monthStr = `${y}.${String(m).padStart(2, '0')}`;
             const rec = safeRecords[dateKey];
             if (rec) {
@@ -702,7 +767,6 @@ export default function NewCalendarApp() {
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       .hoverable:active { transform: scale(0.95); transition: transform 0.1s; }
     `}} />
-
     {/* ROOT CONTAINER */}
     <div 
       onClick={handleBackgroundClick} 
@@ -714,6 +778,9 @@ export default function NewCalendarApp() {
       >
         
         {/* Modals */}
+        {/* [NEW] Show guide if not seen */}
+        {!hasSeenGuide && <UserGuideModal onClose={() => setHasSeenGuide(true)} t={t} isDark={darkMode} />}
+
         {showDatePicker && <CustomDatePicker currentYear={year} currentMonth={month} onClose={() => setShowDatePicker(false)} onSelect={(y, m) => { setCurrentDate(new Date(y, m, 1)); setShowDatePicker(false); }} isDark={darkMode} t={t} />}
         {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onReset={handleResetCurrentMonth} onExport={handleExportData} onImport={handleImportData} toggleLanguage={toggleLanguage} t={t} isDark={darkMode} lastBackupDate={lastBackupDate} isBackupOverdue={isBackupOverdue} />}
         {zoomedDateKey && (
@@ -765,34 +832,35 @@ export default function NewCalendarApp() {
               <div onTouchStart={onTouchStartSwipe} onTouchMove={onTouchMoveSwipe} onTouchEnd={onTouchEndSwipe}>
                   <div className="grid grid-cols-[1fr_auto] gap-1 mb-1">
                      <div className="grid grid-cols-7 gap-1">
-                        {currentWeekLabels.map((day, i) => (<div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>))}
+                         {currentWeekLabels.map((day, i) => (<div key={i} className={`text-center text-[11px] font-bold uppercase tracking-wide py-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{day}</div>))}
                      </div>
                      <div className="w-8"></div>
                   </div>
+       
                   <div className="flex flex-col gap-1">
                     {weeks.map((week, weekIndex) => (
                       <div key={weekIndex} className="flex gap-1">
                         <div className="grid grid-cols-7 gap-1 flex-1">
                           {week.map((cell, dayIndex) => {
-                            if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />; 
+                            if (cell.type === 'empty') return <div key={dayIndex} className="h-20" />;
                             
                             const isCurrent = cell.type === 'current';
                             const isTodayDate = isCurrent && isToday(cell.day, month, year);
                             const cellNotes = dayNotes?.[cell.dateKey];
                             const hasNote = isCurrent && cellNotes && Object.values(cellNotes).some(t => t && t.trim().length > 0);
-                            
-                            // 這裡已經移除了 useLongPress Hook！
-                            // 改用 onTouchStart/onTouchEnd + useRef 實作
+
                             const handlePressStart = () => isCurrent && startLongPress(cell.dateKey);
                             const handlePressEnd = () => cancelLongPress();
 
                             const subCells = [];
                             const cellRecord = (records && records[cell.dateKey]) ? records[cell.dateKey] : {};
+
                             for (let i = 0; i < gridMode; i++) {
                                const colorId = cellRecord[i];
                                const activeCatState = safeCategories.find(c => c.id === colorId);
                                const style = getColorDef(activeCatState?.id);
                                const finalColor = activeCatState ? (darkMode ? style.dark : style.light) : 'bg-transparent';
+                               
                                subCells.push(
                                  <div 
                                     key={i} 
@@ -809,7 +877,6 @@ export default function NewCalendarApp() {
                             const textColor = isTodayDate 
                                 ? (darkMode ? 'bg-slate-100 text-slate-900' : 'bg-slate-800 text-white') 
                                 : (darkMode ? 'text-slate-200' : 'text-slate-500');
-                                
                             const dashColor = isTodayDate
                                 ? (darkMode ? 'bg-slate-100' : 'bg-slate-800')
                                 : (darkMode ? 'bg-slate-200' : 'bg-slate-500');
@@ -817,8 +884,6 @@ export default function NewCalendarApp() {
                             return (
                               <div key={dayIndex} 
                                    className={`relative rounded-lg overflow-hidden flex flex-col h-20 transition-colors select-none ring-1 ring-inset ${isCurrent ? (darkMode ? 'bg-slate-800 ring-slate-500' : 'bg-white ring-slate-400') : (darkMode ? 'bg-slate-800/30 ring-slate-800 opacity-40' : 'bg-white/50 ring-slate-200 opacity-40')}`}
-                                   
-                                   /* 使用簡單事件取代 Hook */
                                    onTouchStart={handlePressStart}
                                    onTouchEnd={handlePressEnd}
                                    onMouseDown={handlePressStart}
@@ -847,7 +912,7 @@ export default function NewCalendarApp() {
 
               {/* Spacer */}
               <div className="h-6 w-full" /> 
-
+              
               {/* Color Palette */}
               <div className="px-1">
                  <div className="flex items-center justify-between mb-3 px-1">
@@ -858,7 +923,6 @@ export default function NewCalendarApp() {
                         </h3>
                         <button onClick={(e) => { e.stopPropagation(); toggleReorderMode('color'); }} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'color' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
                     </div>
-
                     <button 
                         onClick={(e) => { e.stopPropagation(); setSelectedColor(prev => prev === 'ERASER' ? null : 'ERASER'); }}
                         className={`p-1.5 rounded-full transition-all ${selectedColor === 'ERASER' ? (darkMode ? 'bg-slate-600 text-white ring-1 ring-slate-400' : 'bg-slate-800 text-white ring-1 ring-slate-600') : (darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
@@ -867,7 +931,6 @@ export default function NewCalendarApp() {
                         <Eraser size={14} />
                     </button>
                  </div>
-
                  <div className="grid grid-cols-3 gap-3">
                     {safeCategories.map((cat) => {
                       const style = getColorDef(cat.id);
@@ -896,10 +959,10 @@ export default function NewCalendarApp() {
                  </div>
               </div>
 
-              {/* Footer Notes - Removed e.stopPropagation */}
+              {/* Footer Notes */}
               <div className="mt-8 mb-4 px-1">
                  <div className="flex justify-between items-end mb-2">
-                   <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <h3 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{memoMonthLabel} {t.memoHeader} <span className="text-[9px] font-normal opacity-60 ml-1">{t.editHint}</span></h3>
                       <div className="flex items-center gap-2">
                         <button onClick={(e) => { e.stopPropagation(); toggleReorderMode('note'); }} className={`p-1.5 rounded-full transition-colors ${reorderMode === 'note' ? (darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600') : (darkMode ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-300' : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500')}`}><ArrowRightLeft size={14} /></button>
@@ -915,10 +978,9 @@ export default function NewCalendarApp() {
               </div>
             </>
           ) : (
-            <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2" onClick={(e) => e.stopPropagation()}>
+             <div className="h-full flex flex-col justify-start pt-2 pb-4 animate-in fade-in zoom-in duration-300 px-2" onClick={(e) => e.stopPropagation()}>
                <div className="flex flex-col h-full gap-2">
                  {safeCategories.map((cat) => {
-                    // Safe access to avoid crash
                     const current = (stats && stats.currentCounts) ? (stats.currentCounts[cat.id] || 0) : 0;
                     const prev = (stats && stats.prevCounts) ? (stats.prevCounts[cat.id] || 0) : 0;
                     const diff = current - prev;
@@ -936,8 +998,9 @@ export default function NewCalendarApp() {
                         freqText = `${avg}${t.perMonth}`;
                     }
                     let diffColorClass = darkMode ? 'text-slate-500' : 'text-slate-400'; 
-                    if (diff > 0) { diffColorClass = darkMode ? 'text-emerald-400' : 'text-emerald-600'; } else if (diff < 0) { diffColorClass = darkMode ? 'text-red-400' : 'text-red-600'; }
-
+                    if (diff > 0) { diffColorClass = darkMode ? 'text-emerald-400' : 'text-emerald-600'; } 
+                    else if (diff < 0) { diffColorClass = darkMode ? 'text-red-400' : 'text-red-600'; }
+                    
                     return (
                       <div key={cat.id} className={`flex-1 w-full p-3 rounded-2xl border ${darkMode ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-white/60'} shadow-sm flex items-center justify-between gap-4`}>
                          <div className="flex flex-col justify-center items-start w-28 flex-shrink-0">
